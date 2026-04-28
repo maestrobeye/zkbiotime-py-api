@@ -11,6 +11,8 @@ from fastapi.responses import StreamingResponse
 import pandas as pd
 import io
 import httpx
+from pydantic import BaseModel
+import requests
 
 load_dotenv()
 API_TOKEN = os.getenv("API_TOKEN")
@@ -22,8 +24,8 @@ ATT_API_URL = "http://localhost/att/api/totalTimeCardReportV2/?format=json"
 
 # ----------------- CORS -----------------
 origins = [
-    "http://localhost:3000",  # Frontend en développement
-    "http://10.14.202.135:3000", # Frontend en production
+    "http://localhost:3001",  # Frontend en développement
+    "http://10.14.209.68:3001", # Frontend en production
 ]
 
 app.add_middleware(
@@ -34,18 +36,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
 def check_token(token: str):
     if token != API_TOKEN:
         raise HTTPException(status_code=401, detail="Unauthorized")
+
+#auth login route
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+@app.post("/auth/login")
+def login(user: LoginRequest):
+    headers = {
+        "Content-Type": "application/json",
+    }
+
+    url = "http://localhost/api-token-auth"
+
+    response = requests.post(
+        url,
+        json=user.dict(),
+        headers=headers
+    )
+    print("Status:", response.status_code)
+    print("Content:", response.text)
+
+    return {
+        "status": response.status_code,
+        "raw": response.text
+    }
+    return response.json()
 
 # 🔐 Sécurité simple par token
 @app.get("/punches")
@@ -447,55 +467,144 @@ def get_employees(
         "data": data
     }
 
+# @app.get("/employee/{emp_id}",
+#          summary="Récupère les informations d'un employé",
+#          description="""
+#             Récupère les informations détaillées d'un employé avec :
+#             - code employé
+#             - prénom
+#             - nom
+#             - date de création
+#             - département
+#             - etc.
+#          """)
+# def get_employee(emp_id: int, x_api_key: str = Header(...)):
+#     # Vérification du token
+#     check_token(x_api_key)
+
+#     # Requête SQL
+#     query = """
+#         SELECT
+#             e.id,
+#             e.emp_code,
+#             e.first_name,
+#             e.last_name,
+#             e.hire_date,
+#             d.dept_name,
+#             pp.position_name,
+#             e.email
+#         FROM personnel_employee e
+#         JOIN personnel_department d ON d.id = e.department_id
+#         JOIN personnel_position pp ON pp.id = e.position_id
+#         WHERE e.id = %s
+#     """
+
+#     conn = get_conn()
+#     cur = conn.cursor()
+#     cur.execute(query, (emp_id,))
+#     row = cur.fetchone()
+#     cur.close()
+#     conn.close()
+#     print(emp_id)
+#     if not row:
+#         raise HTTPException(status_code=404, detail="Employee not found")
+
+#     return {
+#         "emp_id": row[0],
+#         "emp_code": row[1],
+#         "first_name": row[2],
+#         "last_name": row[3],
+#         "hire_date": row[4].strftime("%Y-%m-%d") if row[4] else None,
+#         "department": row[5],
+#         "position": row[6],
+#         "email": row[7]
+#     }
 @app.get("/employee/{emp_id}",
-         summary="Récupère les informations d'un employé",
-         description="""
-            Récupère les informations détaillées d'un employé avec :
-            - code employé
-            - prénom
-            - nom
-            - date de création
-            - département
-            - etc.
-         """)
+         summary="Récupère les informations d'un employé avec ses pointages")
 def get_employee(emp_id: int, x_api_key: str = Header(...)):
-    # Vérification du token
     check_token(x_api_key)
 
-    # Requête SQL
-    query = """
+    conn = get_conn()
+    cur = conn.cursor()
+
+    # ---------------------------
+    # 👤 Infos employé
+    # ---------------------------
+    query_employee = """
         SELECT
             e.id,
             e.emp_code,
             e.first_name,
             e.last_name,
             e.hire_date,
-            e.department,
-            e.position,
+            d.dept_name,
+            pp.position_name,
             e.email
         FROM personnel_employee e
+        LEFT JOIN personnel_department d ON d.id = e.department_id
+        LEFT JOIN personnel_position pp ON pp.id = e.position_id
         WHERE e.id = %s
     """
 
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(query, (emp_id,))
+    cur.execute(query_employee, (emp_id,))
     row = cur.fetchone()
+
+    if not row:
+        cur.close()
+        conn.close()
+        raise HTTPException(status_code=404, detail="Employee not found")
+
+    # ---------------------------
+    # ⏱ Pointages (att_payloadtimecard)
+    # ---------------------------
+    query_attendance = """
+        SELECT
+            t.att_date,
+            COALESCE(t.clock_in, t.check_in) AS arrival,
+            COALESCE(t.clock_out, t.check_out) AS departure,
+            t.present,
+            t.full_attendance
+        FROM att_payloadtimecard t
+        WHERE t.emp_id = %s
+        ORDER BY t.att_date DESC
+        LIMIT 30
+    """
+
+    cur.execute(query_attendance, (emp_id,))
+    rows = cur.fetchall()
+
     cur.close()
     conn.close()
 
-    if not row:
-        raise HTTPException(status_code=404, detail="Employee not found")
+    # ---------------------------
+    # 📊 Formatage pointages
+    # ---------------------------
+    attendance = [
+        {
+            "date": r[0].strftime("%Y-%m-%d") if r[0] else None,
+            "arrival": r[1].strftime("%H:%M:%S") if r[1] else None,
+            "departure": r[2].strftime("%H:%M:%S") if r[2] else None,
+            "present": r[3],
+            "full_attendance": r[4],
+            # "worked_hours": float(r[5]) if r[5] else 0,
+            # "overtime": float(r[6]) if r[6] else 0
+        }
+        for r in rows
+    ]
 
+    # ---------------------------
+    # 📦 Réponse finale
+    # ---------------------------
     return {
         "emp_id": row[0],
         "emp_code": row[1],
         "first_name": row[2],
         "last_name": row[3],
         "hire_date": row[4].strftime("%Y-%m-%d") if row[4] else None,
-        "department": row[5],
-        "position": row[6],
-        "email": row[7]
+        "department": row[5] if row[5] else "Non défini",
+        "position": row[6] if row[6] else "Non défini",
+        "email": row[7],
+        "attendance": attendance
     }
 
 @app.get(
@@ -503,7 +612,7 @@ def get_employee(emp_id: int, x_api_key: str = Header(...)):
     summary="Proxy ZKBioTime - Total TimeCard avec paramètres"
 )
 async def get_total_timecard_report(
-    # 🔎 Filtres ZK
+    # Filtres ZK
     areas: int = Query(-1),
     departments: int = Query(-1),
     employees: Optional[str] = Query(None, description="IDs séparés par des virgules"),
@@ -513,7 +622,7 @@ async def get_total_timecard_report(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, le=200),
 
-    # 🔐 Sécurité
+    # Sécurité
     authorization: str = Header(...),
     x_api_key: str = Header(...)
 ):
@@ -527,7 +636,7 @@ async def get_total_timecard_report(
         "end_date": end_date.isoformat(),
         "page": page,
         "page_size": page_size,
-        "format": "json"  # ✅ IMPORTANT
+        "format": "json"  # IMPORTANT
     }
 
     if employees:
@@ -558,7 +667,7 @@ async def get_total_timecard_report(
     summary="Export Excel - Total TimeCard (ZKBioTime)"
 )
 async def export_total_timecard_excel(
-    # 🔎 Filtres ZK
+    # Filtres ZK
     areas: int = Query(-1),
     departments: int = Query(-1),
     employees: Optional[str] = Query(None),
@@ -608,7 +717,7 @@ async def export_total_timecard_excel(
 
     zk_data = response.json()
 
-    # 🔍 ZK renvoie souvent { "data": [...], "count": ... }
+    # ZK renvoie souvent { "data": [...], "count": ... }
     rows = zk_data.get("data", [])
 
     if not rows:
@@ -616,21 +725,46 @@ async def export_total_timecard_excel(
             status_code=404,
             detail="Aucune donnée à exporter"
         )
-
-    # 📊 Conversion en DataFrame
+    
+    columns_to_keep = [
+        "emp_code",
+        "first_name",
+        "last_name",
+        "att_date",
+        "clock_in",
+        "clock_out",
+        "worked_hrs",
+        "total_ot",
+        "full_attendance"
+    ]
     df = pd.DataFrame(rows)
-
-    # ✨ (Optionnel) renommage colonnes lisibles
+    # 📊 Conversion en DataFrame
+    #df = pd.DataFrame(rows)
+    df = df[[col for col in columns_to_keep if col in df.columns]]
     df.rename(columns={
         "emp_code": "Code Employé",
         "first_name": "Prénom",
         "last_name": "Nom",
         "att_date": "Date",
-        "clock_in": "Arrivée",
-        "clock_out": "Départ",
-        "work_time": "Temps travaillé",
-        "work_day": "Jour travaillé"
+        "clock_in": "Heure arrivée",
+        "clock_out": "Heure départ",
+        "worked_hrs": "Heures travaillées",
+        "total_ot": "Heures supplémentaires",
+        "full_attendance": "Présence complète"
     }, inplace=True)
+
+    print(df.columns)
+    # ✨ (Optionnel) renommage colonnes lisibles
+    # df.rename(columns={
+    #     "emp_code": "Code Employé",
+    #     "first_name": "Prénom",
+    #     "last_name": "Nom",
+    #     "att_date": "Date",
+    #     "clock_in": "Arrivée",
+    #     "clock_out": "Départ",
+    #     "work_time": "Temps travaillé",
+    #     "work_day": "Jour travaillé"
+    # }, inplace=True)
 
     # 📁 Génération Excel en mémoire
     output = io.BytesIO()
@@ -648,6 +782,7 @@ async def export_total_timecard_excel(
             "Content-Disposition": f'attachment; filename="{filename}"'
         }
     )
+
 @app.get(
     "/presences",
     summary="Liste des présences",
