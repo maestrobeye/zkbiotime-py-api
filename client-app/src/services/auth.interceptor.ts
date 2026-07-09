@@ -9,15 +9,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         'Content-Type': 'application/json',
         'x-api-key': '1234',
         Authorization: 'Token 55edb303ff20f29a02c434fb5634a8cefd5c17cb',
-
       }
     });
     return next(reqWithoutAuth);
   }
 
-  // For other requests (POST, PUT, DELETE, etc.), add the necessary headers.
-  // In a real application, you would inject an AuthService
-  // and retrieve the token dynamically.
   const authToken = '55edb303ff20f29a02c434fb5634a8cefd5c17cb';
 
   // Clone the request to add the new headers.

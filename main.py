@@ -47,7 +47,7 @@ def check_token(token: str):
     if token != API_TOKEN:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-# 🔐 Sécurité simple par token
+# Sécurité simple par token
 @app.get("/punches")
 def get_punches(
     start: Optional[datetime] = None,

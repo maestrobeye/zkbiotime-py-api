@@ -21,11 +21,11 @@ export class LoginComponent {
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   passwordVisible = signal(false);
-  currentUser: User | null = null;
+  currentUser?: User;
 
   loginForm = this.fb.group({
-    email: ['admin@pointage.pro', [Validators.required, Validators.email]],
-    password: ['password', [Validators.required]]
+    username: ['', [Validators.required]],
+    password: ['', [Validators.required]]
   });
 
   togglePasswordVisibility(): void {
@@ -40,17 +40,17 @@ export class LoginComponent {
 
     this.isLoading.set(true);
     this.errorMessage.set(null);
-    const { email, password } = this.loginForm.value;
+    const { username, password } = this.loginForm.value as { username: string; password: string };
 
-    this.authService.login(email!, password!).subscribe({
+    this.authService.login(username, password).subscribe({
       next: (data: any) => {
         this.isLoading.set(false);
         this.currentUser = {
-          email: email,
+          username: username,
           name: 'Admin User'
         }
 
-        this.authService.setToken('55edb303ff20f29a02c434fb5634a8cefd5c17cb');
+        this.authService.setToken(data.token);
         this.authService.setCurrentUser(this.currentUser);
         if (data) {
           this.router.navigate(['/dashboard']);

@@ -27,7 +27,7 @@ export class PersonnelComponent {
 
    private responsePresence: Signal<any | undefined> = toSignal(
     this.page$.pipe(
-      switchMap(page => this.dataService.getPresences([93], '2025-12-01', '2025-12-31',   "31"))
+      switchMap(page => this.dataService.getPresences([93], '2025-12-01', '2025-12-31', "31"))
     )
   );
 

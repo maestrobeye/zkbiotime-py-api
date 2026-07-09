@@ -36,7 +36,7 @@ export interface PaginatedEmployees {
 })
 export class DataService {
   private http: HttpClient = inject(HttpClient);
-  private apiUrl = 'http://10.14.202.7:8000';
+  private apiUrl = 'http://10.14.209.12:8000';
 
   // Mock data to be used as a fallback
   private mockEmployees: Employee[] = [
@@ -227,7 +227,7 @@ export class DataService {
   }
 
   getEmployeeById(id: number): Observable<Employee | undefined> {
-    return this.http.get<ApiEmployee>(`${this.apiUrl}/employees/${id}`).pipe(
+    return this.http.get<ApiEmployee>(`${this.apiUrl}/employee/${id}`).pipe(
       map((apiEmp: ApiEmployee) => this.mapApiEmployeeToEmployee(apiEmp)),
       catchError((error): Observable<Employee | undefined> => {
         console.error(`Error fetching employee with id=${id}, returning mock data:`, error);

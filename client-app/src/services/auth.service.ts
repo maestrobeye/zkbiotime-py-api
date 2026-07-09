@@ -1,8 +1,9 @@
 
-import { Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { catchError, delay, mapTo, tap } from 'rxjs/operators';
 import { User } from '../types/user'
+import { HttpClient } from '@angular/common/http';
 @Injectable({
   providedIn: 'root'
 })
@@ -10,17 +11,21 @@ export class AuthService {
   isAuthenticated = signal<boolean>(false);
   private tokenName = 'Token';
   private token: string | null = null;
+  private http: HttpClient = inject(HttpClient);
+  private apiUrl = 'http://10.14.209.12:8000';
 
   private currentUserManager: BehaviorSubject<any> = new BehaviorSubject(null);
   public currentUserProvider = this.currentUserManager.asObservable();
 
-  login(email: string, password: string): Observable<boolean> {
-    // Mock authentication logic
-    if (email === 'admin@pointage.pro' && password === 'password') {
-      // this.isAuthenticated.set(true);
-      return of(true).pipe(delay(500)); // Simulate network delay
-    }
-    return of(false).pipe(delay(500));
+  login(username: string, password: string): Observable<boolean> {
+    return this.http.post<{ token: string }>(`${this.apiUrl}/auth/login`, { username, password }).pipe(
+      tap(response => {
+        this.setToken(response.token);
+        this.isAuthenticated.set(true);
+      }),
+      mapTo(true),
+      catchError(() => of(false))
+    );
   }
 
   public get currentUserValue(): User {
@@ -96,7 +101,7 @@ export class AuthService {
 
       const user = localStorage.getItem('currentUser');
       if (user) {
-        this.currentUserManager.next(JSON.parse(user));
+            // this.currentUserManager.next(JSON.parse(user));
       }
     } else {
       this.isAuthenticated.set(false);
