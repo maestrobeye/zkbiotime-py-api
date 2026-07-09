@@ -25,7 +25,7 @@ ATT_API_URL = "http://localhost/att/api/totalTimeCardReportV2/?format=json"
 # ----------------- CORS -----------------
 origins = [
     "http://localhost:3001",  # Frontend en développement
-    "http://10.14.209.68:3001", # Frontend en production
+    "http://10.14.209.125:3001", # Frontend en production
 ]
 
 app.add_middleware(
@@ -51,7 +51,7 @@ def login(user: LoginRequest):
         "Content-Type": "application/json",
     }
 
-    url = "http://localhost/api-token-auth"
+    url = "http://localhost/api-token-auth/"
 
     response = requests.post(
         url,
@@ -60,6 +60,7 @@ def login(user: LoginRequest):
     )
     print("Status:", response.status_code)
     print("Content:", response.text)
+
 
     return {
         "status": response.status_code,
