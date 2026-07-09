@@ -40,6 +40,9 @@ def check_token(token: str):
     if token != API_TOKEN:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
+<<<<<<< HEAD
+# Sécurité simple par token
+=======
 #auth login route
 class LoginRequest(BaseModel):
     username: str
@@ -69,6 +72,7 @@ def login(user: LoginRequest):
     return response.json()
 
 # 🔐 Sécurité simple par token
+>>>>>>> 4668f84c0624b3cd1a71d45ded201e7277066263
 @app.get("/punches")
 def get_punches(
     start: Optional[datetime] = None,

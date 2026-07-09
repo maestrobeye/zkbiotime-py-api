@@ -3,10 +3,9 @@ import { CommonModule } from '@angular/common';
 import { DataService } from '../../services/data.service';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Employee } from '../../types/employee';
 import { switchMap } from 'rxjs';
 
-interface AttendanceRecord {
+export interface AttendanceRecord {
   employeeId: number;
   employeeName: string;
   date: string;
@@ -25,7 +24,9 @@ interface AttendanceRecord {
 export class HistoryComponent {
   private dataService = inject(DataService);
   currentPage = signal(1);
-
+  pageSize = 100;
+  startDateTime = signal<string>('');
+  endDateTime = signal<string>('');
   private page$ = toObservable(this.currentPage);
 
   // FIX: Explicitly type the `employees` signal to resolve type inference issues with `toSignal`.
@@ -35,9 +36,6 @@ export class HistoryComponent {
       switchMap(page => this.dataService.getPresences([93, 94, 4, 97, 100, 79, 98, 99], '2025-12-01', '2025-12-31', "200"))
     )
   );
-  // Filter signals
-  startDateTime = signal<string>('');
-  endDateTime = signal<string>('');
 
   constructor() {
     effect(() => {
@@ -86,9 +84,6 @@ export class HistoryComponent {
       return startMatch && endMatch;
     });
   });
-
-  // Pagination logic
-  pageSize = 100;
 
   totalPages = computed(() => {
     return Math.ceil(this.filteredAttendanceRecords().length / this.pageSize);
@@ -182,10 +177,6 @@ export class HistoryComponent {
     URL.revokeObjectURL(url);
   }
 
-  // exportDataExcel(): void {
-  //   console.log("Downloading Excel file...");
-  //   this.dataService.downloadPresencesExcel([93,94,4,97,100,79,98,99], '2025-12-01', '2025-12-31', "200")
-  // }
   exportDataExcel(): void {
     console.log('Downloading Excel file...');
 

@@ -1,11 +1,12 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed, effect, Signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink, ParamMap } from '@angular/router';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs/operators';
 import { DataService } from '../../services/data.service';
 import { FormsModule } from '@angular/forms';
-import { Employee, TimeEntry } from '../../types/employee';
+import { Employee } from '../../types/employee';
+import { combineLatest, of } from 'rxjs';
 
 @Component({
   selector: 'app-employee',
@@ -16,10 +17,21 @@ import { Employee, TimeEntry } from '../../types/employee';
 export class EmployeeComponent {
   private route: ActivatedRoute = inject(ActivatedRoute);
   private dataService: DataService = inject(DataService);
+  currentPage = signal(1);
+  pageSize = 100;
+  startDateTime = signal<string>('');
+  endDateTime = signal<string>('');
+  private page$ = toObservable(this.currentPage);
 
-  // FIX: Explicitly type the `employee` signal to `Signal<Employee | undefined>`.
-  // This resolves the type inference issue where `employee()` was being treated as `unknown`,
-  // causing a compilation error when accessing `employee().timeEntries`.
+  constructor() {
+    effect(() => {
+      // Reset page to 1 when filters or employee changes
+      this.employee();
+      this.startDateTime();
+      this.endDateTime();
+      this.currentPage.set(1);
+    });
+  }
   employee: Signal<Employee | undefined> = toSignal(
     this.route.paramMap.pipe(
       switchMap((params: ParamMap) => {
@@ -29,91 +41,187 @@ export class EmployeeComponent {
     )
   );
 
-  // Filter signals
-  startDateTime = signal<string>('');
-  endDateTime = signal<string>('');
+  private responsePresence: Signal<any | undefined> = toSignal(
+    combineLatest([
+      this.page$,
+      toObservable(this.employee)
+    ]).pipe(
+      switchMap(([page, employee]) => {
+        if (!employee) return of(undefined);
 
-  constructor() {
-    effect(() => {
-      // Reset page to 1 when filters or employee changes
-      this.startDateTime();
-      this.endDateTime();
-      this.employee();
-      this.currentPage.set(1);
-    });
-  }
-  
-  filteredTimeEntries = computed<TimeEntry[]>(() => {
-    const emp = this.employee();
-    if (!emp) {
-      return [];
-    }
-    
-    // Create a copy and sort by date descending
-    const entries = [...emp.timeEntries].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return this.dataService.getPresences(
+          [employee.id], // 👈 remplace 93 ici
+          '2025-12-01',
+          '2025-12-31',
+          "31"
+        );
+      })
+    )
+  );
+
+  presences = computed(() => this.responsePresence()?.data ?? []);
+
+  allAttendanceRecords = computed<any[]>(() => {
+    console.log(this.presences());
+    return this.presences()
+      .map((employee: any) => ({
+        employeeId: employee.id,
+        employeeName: employee.first_name + ' ' + employee.last_name,
+        date: employee.att_date,
+        status: this.getAttendanceStatus(employee.clock_in),
+        clockIn: employee.clock_in,
+        clockOut: employee.clock_out,
+        totalHours: employee.total_hrs,
+      })
+      )
+      .sort((a, b) =>
+        new Date(b.date).getTime() - new Date(a.date).getTime() ||
+        (a.clockIn ?? '').localeCompare(b.clockIn ?? '')
+      );
+  });
+
+  filteredAttendanceRecords = computed(() => {
+    const allRecords = this.allAttendanceRecords();
     const sDateTime = this.startDateTime();
     const eDateTime = this.endDateTime();
 
     if (!sDateTime && !eDateTime) {
-      return entries;
+      return allRecords;
     }
-    
-    return entries.filter(entry => {
-      const entryDateTime = `${entry.date}T${entry.clockIn}`;
-      const startMatch = !sDateTime || entryDateTime >= sDateTime;
-      const endMatch = !eDateTime || entryDateTime <= eDateTime;
+
+    return allRecords.filter(record => {
+      const recordDateTime = `${record.date}T${record.clockIn}`;
+      const startMatch = !sDateTime || recordDateTime >= sDateTime;
+      const endMatch = !eDateTime || recordDateTime <= eDateTime;
       return startMatch && endMatch;
     });
   });
 
-  // Pagination logic
-  pageSize = 10;
-  currentPage = signal(1);
-
   totalPages = computed(() => {
-    return Math.ceil(this.filteredTimeEntries().length / this.pageSize);
+    return Math.ceil(this.filteredAttendanceRecords().length / this.pageSize);
   });
 
-  paginatedTimeEntries = computed(() => {
-    const entries = this.filteredTimeEntries();
+  paginatedRecords = computed(() => {
+    const records = this.filteredAttendanceRecords();
     const startIndex = (this.currentPage() - 1) * this.pageSize;
     const endIndex = startIndex + this.pageSize;
-    return entries.slice(startIndex, endIndex);
+    return records.slice(startIndex, endIndex);
   });
-  
+
   startRecordIndex = computed(() => {
-    if (this.filteredTimeEntries().length === 0) return 0;
+    if (this.filteredAttendanceRecords().length === 0) return 0;
     return (this.currentPage() - 1) * this.pageSize + 1;
   });
 
-  endRecordIndex = computed(() => Math.min(this.currentPage() * this.pageSize, this.filteredTimeEntries().length));
+  endRecordIndex = computed(() => Math.min(this.currentPage() * this.pageSize, this.filteredAttendanceRecords().length));
 
-  
-  getStatusClass(status: 'Active' | 'On Leave' | 'Terminated' | undefined): string {
-    if (!status) return 'bg-gray-100 text-gray-800';
-    switch (status) {
-      case 'Active': return 'bg-green-100 text-green-800';
-      case 'On Leave': return 'bg-yellow-100 text-yellow-800';
-      case 'Terminated': return 'bg-red-100 text-red-800';
-      default: 'bg-gray-100 text-gray-800';
+  getAttendanceStatus(clockIn: string = "9:00"): 'Présent' | 'En retard' | 'Absent' {
+    if (!clockIn) {
+      return 'Absent'; // or 'Not Clocked In'
     }
-    return 'bg-gray-100 text-gray-800';
+    const [hours, minutes] = clockIn.split(':').map(Number);
+    // Late is defined as clocking in after 9:00 AM.
+    if (hours > 9 || (hours === 9 && minutes > 0)) {
+      return 'En retard';
+    }
+    return 'Présent';
+  }
+
+  getStatusClass(status: 'Présent' | 'En retard' | 'Absent'): string {
+    switch (status) {
+      case 'Présent': return 'bg-green-100 text-green-800';
+      case 'En retard': return 'bg-yellow-100 text-yellow-800';
+      case 'Absent': return 'bg-red-100 text-yellow-800';
+    }
   }
 
   goToNextPage(): void {
     if (this.currentPage() < this.totalPages()) {
+      // FIX: Correctly call update on the signal, not its value.
       this.currentPage.update(page => page + 1);
     }
   }
 
   goToPreviousPage(): void {
     if (this.currentPage() > 1) {
+      // FIX: Correctly call update on the signal, not its value.
       this.currentPage.update(page => page - 1);
     }
   }
-  
+
+
   clearFilters(): void {
     this.startDateTime.set('');
     this.endDateTime.set('');
+  }
+
+  exportData(): void {
+    const records = this.filteredAttendanceRecords();
+    if (records.length === 0) {
+      alert("Aucune donnée à exporter avec les filtres actuels.");
+      return;
+    }
+
+    const headers = ['Employé', 'Date', 'Statut', 'Arrivée', 'Départ', 'Total Heures'];
+    const csvRows = [
+      headers.join(','),
+      ...records.map(r => [
+        `"${r.employeeName.replace(/"/g, '""')}"`,
+        r.date,
+        r.status,
+        r.clockIn,
+        r.clockOut,
+        r.totalHours.toFixed(2)
+      ].join(','))
+    ];
+
+    const csvString = csvRows.join('\n');
+    // FIX: Corrected typo in charset from 'utf-t' to 'utf-8'.
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    const today = new Date().toISOString().slice(0, 10);
+    link.setAttribute('download', `export_pointages_${today}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  exportDataExcel(): void {
+    console.log('Downloading Excel file...');
+
+    this.dataService
+      .downloadPresencesExcel(
+        [93, 94, 4, 97, 100, 79, 98, 99],
+        '2025-12-01',
+        '2025-12-31',
+        '200'
+      )
+      .subscribe({
+        next: (blob: Blob) => {
+          this.downloadFile(blob, 'attendance.xlsx');
+        },
+        error: (err) => {
+          console.error('Download failed', err);
+        }
+      });
+  }
+
+  private downloadFile(blob: Blob, fileName: string): void {
+    if (!blob || blob.size === 0) {
+      console.warn('Empty file received');
+      return;
+    }
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.click();
+
+    window.URL.revokeObjectURL(url);
   }
 }
