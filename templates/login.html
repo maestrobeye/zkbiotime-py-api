@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZKBioTime RH - Connexion</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            font-family: Inter, Arial, sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gradient-to-br from-slate-100 to-blue-100">
+
+<div class="min-h-screen flex items-center justify-center px-4">
+
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+
+        <div class="text-center mb-8">
+
+            <div class="mx-auto w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white text-2xl font-bold">
+                RH
+            </div>
+
+            <h1 class="mt-4 text-3xl font-bold text-gray-800">
+                ZKBioTime RH
+            </h1>
+
+            <p class="mt-2 text-gray-500">
+                Connectez-vous pour accéder au tableau de bord.
+            </p>
+
+        </div>
+
+        {% if error %}
+        <div class="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <form method="post" action="/login" class="space-y-5">
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Nom d'utilisateur
+                </label>
+
+                <input
+                    type="text"
+                    name="username"
+                    placeholder="Votre identifiant"
+                    required
+                    class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Mot de passe
+                </label>
+
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="••••••••"
+                    required
+                    class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none">
+            </div>
+
+            <button
+                type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition">
+                Se connecter
+            </button>
+
+        </form>
+
+        <div class="mt-8 text-center text-sm text-gray-500">
+            ZKBioTime RH &copy; {{ request.url.hostname if request else "2026" }}
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    lucide.createIcons();
+</script>
+
+</body>
+</html>

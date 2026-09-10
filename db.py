@@ -1,5 +1,7 @@
 import psycopg2
+from dotenv import load_dotenv
 import os
+load_dotenv()
 
 def get_conn():
     return psycopg2.connect(
@@ -7,5 +9,5 @@ def get_conn():
         port=os.getenv("PG_PORT", 7496),
         database=os.getenv("PG_DB"),
         user=os.getenv("PG_USER"),
-        password=os.getenv("mon_mot_de_passe")
+        password=os.getenv("PG_PASSWORD")
     )

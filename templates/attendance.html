@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}
+Pointages
+{% endblock %}
+
+{% block content %}
+
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+
+        <div>
+            <h4 class="text-3xl font-bold text-gray-800">
+                Historique des pointages
+            </h4>
+
+            <p class="text-gray-500">
+                Suivi des entrées et sorties des employés
+            </p>
+        </div>
+
+        <a href="/attendance/export"
+            class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg flex items-center gap-2">
+            Exporter Excel
+        </a>
+    </div>
+
+    <!-- Filtres -->
+
+    <div class="bg-white rounded-xl shadow p-5">
+        <form method="get" action="/attendance" class="flex flex-col md:flex-row gap-4 items-center flex-wrap">
+
+            <span class="font-semibold text-gray-700">
+                Filtrer par période :
+            </span>
+        
+            <!-- Sélection rapide -->
+            <select
+                name="periode"
+                id="periode"
+                class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-700 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 hover:border-gray-400"
+            >
+                <option value="">Choisir une période</option>
+                <option value="Aujourd'hui">Aujourd'hui</option>
+                <option value="Hier">Hier</option>
+                <option value="Cette semaine">Cette semaine</option>
+                <option value="Ce mois">Ce mois</option>
+                <option value="Cette année">Cette année</option>
+            </select>
+        
+            <!-- Date de début -->
+            <div>
+                <label for="start_date" class="block text-sm text-gray-600 mb-1">
+                    Début
+                </label>
+        
+                <input
+                    type="date"
+                    id="start_date"
+                    name="start_date"
+                    value="{{ request.query_params.get('start_date','') }}"
+                    class="border border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                >
+            </div>
+        
+            <!-- Date de fin -->
+            <div>
+                <label for="end_date" class="block text-sm text-gray-600 mb-1">
+                    Fin
+                </label>
+        
+                <input
+                    type="date"
+                    id="end_date"
+                    name="end_date"
+                    value="{{ request.query_params.get('end_date','') }}"
+                    class="border border-gray-300 rounded-lg px-3 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                >
+            </div>
+        
+            <button
+                type="submit"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition"
+            >
+                Filtrer
+            </button>
+        
+            {% if request.query_params.get('start_date')
+                or request.query_params.get('end_date') %}
+        
+                <a
+                    href="/attendance"
+                    class="border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-100 transition"
+                >
+                    Réinitialiser
+                </a>
+        
+            {% endif %}
+        
+        </form>
+    </div>
+
+    <!-- Tableau -->
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full">
+                <thead class="bg-gray-100">
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                            Employé
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                            Date
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                            Jour de la semaine
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                            Statut
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                            Arrivée
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                            Départ
+                        </th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
+                            Total
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody class="divide-y">
+                    {% for row in records %}
+
+                    <tr class="hover:bg-gray-50">
+                        <!-- Employé -->
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
+                                    {{ row.first_name[0] }}{{ row.last_name[0] }}
+                                </div>
+                                <span class="font-medium text-gray-900">
+                                    {{ row.first_name }} {{ row.last_name }}
+                                </span>
+                            </div>
+                        </td>
+                        <!-- Date -->
+                        <td class="px-6 py-4 text-gray-600">
+                            {{ row.att_date }}
+                        </td>
+                        <td class="px-6 py-4 text-gray-600">
+                            {{row.weekday}}
+                        </td>
+                        <!-- Statut -->
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold
+                                {% if get_attendance_status(row.clock_in) == 'Présent' %}
+                                bg-green-100 text-green-700
+                                {% elif get_attendance_status(row.clock_in) == 'En retard' %}
+                                bg-yellow-100 text-yellow-700
+                                {% else %}
+                                bg-red-100 text-red-700
+                                {% endif %}
+                            ">
+                                {{ get_attendance_status(row.clock_in) }}
+                            </span>
+                        </td>
+                        <!-- Arrivée -->
+                        <td class="px-6 py-4 font-mono text-gray-800">
+                            {{ row.clock_in or "-" }}
+                        </td>
+                        <!-- Départ -->
+                        <td class="px-6 py-4 font-mono text-gray-600">
+                            {{ row.clock_out or "-" }}
+                        </td>
+                        <!-- Total -->
+                        <td class="px-6 py-4 font-semibold">
+                            {{ row.total_hrs or "-" }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center py-12 text-gray-500">
+                            Aucun historique de pointage trouvé.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="flex justify-between items-center p-4 bg-white">
+
+                <div class="text-sm text-gray-600">
+                    Page {{ page }}
+                    -
+                    {{ count }} résultats
+                </div>
+
+                <div class="flex gap-2">
+
+                    {% if previous %}
+                    <a href="?page={{ page-1 }}&page_size={{ page_size }}"
+                        class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">
+                        Précédent
+                    </a>
+                    {% endif %}
+
+                    {% if next %}
+                    <a href="?page={{ page+1 }}&page_size={{ page_size }}"
+                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                        Suivant
+                    </a>
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+
+{% endblock %}

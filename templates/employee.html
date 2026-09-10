@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Employé{% endblock %}
+
+{% block content %}
+
+<div class="space-y-8">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+
+        <div class="flex items-center gap-4">
+
+            <a href="/employees"
+               class="p-2 rounded-lg hover:bg-gray-100">
+
+                ←
+
+            </a>
+
+            <div>
+
+                <h3 class="text-3xl font-bold text-gray-800">
+                    {{ employee.first_name }}
+                    {{ employee.last_name }}
+                </h3>
+                <p class="text-gray-500">
+                    CODE RFID : {{ employee.code }}
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Carte employé -->
+
+    <div class="bg-white rounded-xl shadow">
+
+        <div class="p-8">
+            <div class="flex gap-8 items-center">
+                <div class="w-24 h-24 rounded-full bg-blue-600 text-white text-3xl flex items-center justify-center font-bold">
+                    {{ employee.first_name[0] }}{{ employee.last_name[0] }}
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6 flex-1">
+                    <div>
+                        <p class="text-sm text-gray-500">
+                            Nom
+                        </p>
+                        <p class="font-semibold">
+                            {{ employee.first_name }}
+                            {{ employee.last_name }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-sm text-gray-500">
+                            Email
+                        </p>
+                        <p>
+                            {{ employee.email }}
+                        </p>
+                    </div>
+
+                    <div>
+                        <p class="text-sm text-gray-500">
+                            Département
+                        </p>
+                        <p>
+                            {{ employee.department }}
+                        </p>
+                    </div>
+
+                    <div>
+
+                        <p class="text-sm text-gray-500">
+                            Poste
+                        </p>
+
+                        <p>
+                            {{ employee.position }}
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Historique -->
+
+    <div class="bg-white rounded-xl shadow">
+
+        <div class="border-b p-6 flex justify-between items-center">
+
+            <h2 class="text-xl font-semibold">
+
+                Historique des pointages
+
+            </h2>
+
+            <a href="/attendance/export?emp={{ employee.id }}"
+               class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+
+                Export Excel
+
+            </a>
+
+        </div>
+
+        <div class="overflow-x-auto">
+
+            <table class="min-w-full">
+
+                <thead class="bg-gray-100">
+
+                <tr>
+
+                    <th class="px-6 py-3 text-left">
+
+                        Date
+
+                    </th>
+
+                    <th class="px-6 py-3 text-left">
+
+                        Arrivée
+
+                    </th>
+
+                    <th class="px-6 py-3 text-left">
+
+                        Départ
+
+                    </th>
+
+                </tr>
+
+                </thead>
+
+                <tbody>
+
+                {% for row in records %}
+
+                <tr class="border-b hover:bg-gray-50">
+
+                    <td class="px-6 py-4">
+
+                        {{ row.att_date }}
+
+                    </td>
+
+                    <td class="px-6 py-4 font-mono">
+
+                        {{ row.clock_in or "-" }}
+
+                    </td>
+
+                    <td class="px-6 py-4 font-mono">
+
+                        {{ row.clock_out or "-" }}
+
+                    </td>
+
+                </tr>
+
+                {% else %}
+
+                <tr>
+
+                    <td colspan="3"
+                        class="py-10 text-center text-gray-500">
+
+                        Aucun pointage disponible.
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
