@@ -11,7 +11,6 @@ from starlette.middleware.sessions import SessionMiddleware
 from db import get_conn
 
 import pandas as pd
-import io
 import os
 from datetime import date
 from pydantic import BaseModel,EmailStr
@@ -51,16 +50,6 @@ templates = Jinja2Templates(
     directory="templates"
 )
 
-
-# -----------------------------
-# Utilisateur RH
-# (à remplacer par table users)
-# -----------------------------
-
-USERS = {
-    "rh": "1234",
-    "admin": "admin"
-}
 
 class EmployeeCreate(BaseModel):
     emp_code: str
@@ -827,70 +816,42 @@ async def update_employee(
     "/employee/{emp_id}",
     response_class=HTMLResponse
 )
-def employee_detail(
+async def employee_profile(
     request: Request,
     emp_id:int
 ):
     if not check_login(request):
         return RedirectResponse("/login")
+ 
+    token = request.session["zk_token"]
 
-
-    conn=get_conn()
-    cur=conn.cursor()
-
-
-    cur.execute(
-        """
-        SELECT
-            e.emp_code,
-            e.first_name,
-            e.last_name,
-            e.email,
-            d.dept_name,
-            p.position_name
-
-        FROM personnel_employee e
-
-        LEFT JOIN personnel_department d
-        ON d.id=e.department_id
-
-        LEFT JOIN personnel_position p
-        ON p.id=e.position_id
-
-        WHERE e.id=%s
-
-        """,
-        (emp_id,)
-    )
-
-
-    emp=cur.fetchone()
-
-    cur.close()
-    conn.close()
-
-    if not emp:
-        raise HTTPException(
-            404,
-            "Employé introuvable"
-        )
-
-    employee = {
-        "code": emp[0],
-        "first_name": emp[1],
-        "last_name": emp[2],
-        "email": emp[3],
-        "department": emp[4],
-        "emp_id": emp_id
+    headers = {
+        "Authorization": f"Token {token}",
+        "Content-Type": "application/json",
+        "X-API-Key": "1234",
     }
 
+    async with httpx.AsyncClient(timeout=30) as client:
+
+        response = await client.get(
+            f"http://localhost/personnel/api/employees/{emp_id}/",
+            headers=headers,
+        )
+        
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=response.text,
+        )
+
     return templates.TemplateResponse(
-        request=request,
-        name="employee.html",
-        context={
-            "employee": employee,
-        }
-    )
+    request=request,
+    name="employee.html",
+    context={
+        "request": request,
+        "employee": response.json()
+    },
+)
 
 # -----------------------------
 # POINTAGES
@@ -1192,3 +1153,36 @@ def format_time(dt):
 
     utc_time = dt.astimezone(timezone.utc)
     return utc_time.strftime("%H:%M:%S")
+
+
+@app.get("/pointeurs")
+async def get_terminals(request: Request):
+
+    token = request.session["zk_token"]
+
+    headers = {
+        "Authorization": f"Token {token}",
+        "Content-Type": "application/json",
+        "X-API-Key": "1234",
+    }
+
+    async with httpx.AsyncClient(timeout=30) as client:
+
+        response = await client.get(
+            "http://localhost/iclock/api/terminals/",
+            headers=headers,
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=response.text,
+        )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="terminals.html",
+        context={
+          "terminals": response.json()
+        },
+    )

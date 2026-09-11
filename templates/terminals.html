@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Employé{% endblock %}
+
+{% block content %}
+
+<div class="space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+        <div>
+            <h4 class="text-3xl font-bold text-gray-800">
+                Terminaux
+            </h4>
+
+            <p class="text-gray-500">
+                Liste des pointeurs biométriques
+            </p>
+        </div>
+
+        <!-- Recherche -->
+        <div>
+            <input id="searchInput" type="text" placeholder="Rechercher un terminal..." class="w-72 rounded-lg border border-gray-300
+                       px-4 py-2.5 text-sm
+                       focus:ring-2 focus:ring-blue-500
+                       focus:outline-none">
+        </div>
+
+    </div>
+
+
+    <!-- Statistique -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 px-6 py-4">
+
+        <div class="flex items-center gap-3">
+
+            <div class="w-10 h-10 rounded-lg bg-blue-50
+                        text-blue-600 flex items-center justify-center">
+
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8"
+                    stroke="currentColor" class="w-5 h-5">
+
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2a4 4 0 0 1 4-4h2
+                             m0 0V7
+                             m0 4 4-4
+                             m-4 4-4-4
+                             M5 20h14a2 2 0 0 0 2-2V6
+                             a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12
+                             a2 2 0 0 0 2 2Z" />
+
+                </svg>
+
+            </div>
+
+            <div>
+                <p class="text-sm text-gray-500">
+                    Terminaux
+                </p>
+
+                <p class="text-xl font-bold text-gray-800">
+                    {{ terminals.count }}
+                </p>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Liste des terminaux -->
+    <div id="terminalList" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        {% for terminal in terminals.data %}
+
+        <div class="terminal-card bg-white rounded-xl shadow-sm
+                    border border-gray-100
+                    hover:shadow-md transition" data-search="{{ terminal.alias }}
+                           {{ terminal.sn }}
+                           {{ terminal.ip_address }}
+                           {{ terminal.area_name }}
+                           {{ terminal.terminal_name }}">
+
+            <!-- Header carte -->
+            <div class="px-5 py-4 border-b border-gray-100">
+
+                <div class="flex items-center justify-between">
+
+                    <div class="flex items-center gap-3">
+
+                        <!-- Icône terminal -->
+                        <div class="w-11 h-11 rounded-lg
+                                    bg-indigo-50 text-indigo-600
+                                    flex items-center justify-center">
+
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8"
+                                stroke="currentColor" class="w-6 h-6">
+
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 4h12a2 2 0 0 1 2 2v12
+                                         a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6
+                                         a2 2 0 0 1 2-2Z" />
+
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 8h6
+                                         M8 12h.01
+                                         M12 12h.01
+                                         M16 12h.01
+                                         M8 16h.01
+                                         M12 16h.01
+                                         M16 16h.01" />
+
+                            </svg>
+
+                        </div>
+
+                        <div>
+
+                            <h3 class="font-semibold text-gray-800">
+                                {{ terminal.alias }}
+                            </h3>
+
+                            <p class="text-xs text-gray-500">
+                                {{ terminal.terminal_name }}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    {% if terminal.state == "1" or terminal.state == 1 %}
+
+                    <span class="inline-flex items-center gap-1.5
+                                 px-2.5 py-1 rounded-full
+                                 bg-green-50 text-green-700
+                                 text-xs font-medium">
+                    
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                    
+                        En ligne
+                    
+                    </span>
+                    
+                    {% elif terminal.state == "3" or terminal.state == 3 %}
+                    
+                    <span class="inline-flex items-center gap-1.5
+                                 px-2.5 py-1 rounded-full
+                                 bg-red-50 text-red-700
+                                 text-xs font-medium">
+                    
+                        <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                    
+                        Hors ligne
+                    
+                    </span>
+                    
+                    {% else %}
+                    
+                    <span class="inline-flex items-center gap-1.5
+                                 px-2.5 py-1 rounded-full
+                                 bg-gray-100 text-gray-600
+                                 text-xs font-medium">
+                    
+                        État inconnu
+                    
+                    </span>
+                    
+                    {% endif %}
+                    
+
+                </div>
+
+            </div>
+
+
+            <!-- Informations -->
+            <div class="px-5 py-4">
+
+                <div class="grid grid-cols-2 gap-4">
+
+                    <!-- IP -->
+                    <div>
+
+                        <p class="text-xs text-gray-500">
+                            Adresse IP
+                        </p>
+
+                        <p class="mt-1 text-sm font-medium
+                                  text-gray-800 font-mono">
+                            {{ terminal.ip_address }}
+                        </p>
+
+                    </div>
+
+
+                    <!-- Numéro série -->
+                    <div>
+
+                        <p class="text-xs text-gray-500">
+                            Numéro de série
+                        </p>
+
+                        <p class="mt-1 text-sm font-medium
+                                  text-gray-800 font-mono">
+                            {{ terminal.sn }}
+                        </p>
+
+                    </div>
+
+
+                    <!-- Zone -->
+                    <div>
+
+                        <p class="text-xs text-gray-500">
+                            Zone
+                        </p>
+
+                        <p class="mt-1 text-sm font-medium text-gray-800">
+                            {{ terminal.area_name or "-" }}
+                        </p>
+
+                    </div>
+
+
+                    <!-- Dernière activité -->
+                    <div>
+
+                        <p class="text-xs text-gray-500">
+                            Dernière activité
+                        </p>
+
+                        <p class="mt-1 text-sm text-gray-800">
+                            {{ terminal.last_activity or "-" }}
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Statistiques -->
+                <div class="mt-5 pt-4 border-t border-gray-100">
+
+                    <div class="grid grid-cols-3 gap-3">
+
+                        <!-- Utilisateurs -->
+                        <div class="text-center">
+
+                            <p class="text-lg font-bold text-gray-800">
+                                {{ terminal.user_count }}
+                            </p>
+
+                            <p class="text-xs text-gray-500">
+                                Utilisateurs
+                            </p>
+
+                        </div>
+
+
+                        <!-- Empreintes -->
+                        <div class="text-center border-x border-gray-100">
+
+                            <p class="text-lg font-bold text-gray-800">
+                                {{ terminal.fp_count }}
+                            </p>
+
+                            <p class="text-xs text-gray-500">
+                                Empreintes
+                            </p>
+
+                        </div>
+
+
+                        <!-- Pointages -->
+                        <div class="text-center">
+
+                            <p class="text-lg font-bold text-gray-800">
+                                {{ terminal.transaction_count }}
+                            </p>
+
+                            <p class="text-xs text-gray-500">
+                                Pointages
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Footer -->
+            <div class="px-5 py-3 bg-gray-50
+                        rounded-b-xl
+                        flex items-center justify-between">
+
+                <span class="text-xs text-gray-500">
+                    Firmware : {{ terminal.fw_ver }}
+                </span>
+
+                <span class="text-xs text-gray-500">
+                    Push : {{ terminal.push_ver }}
+                </span>
+
+            </div>
+
+        </div>
+
+        {% else %}
+
+        <div class="lg:col-span-2 bg-white rounded-xl
+                    border border-gray-100 py-12
+                    text-center text-gray-500">
+
+            Aucun terminal trouvé.
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+
+{% endblock %}
