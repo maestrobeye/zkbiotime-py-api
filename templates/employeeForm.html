@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<div class="max-w-5xl mx-auto px-4">
+
+    <!-- Header -->
+    <div class="mb-2">
+        <h1 class="text-2xl font-bold text-gray-900">
+            Créer un employé
+        </h1>
+        <p class="mt-1 text-sm text-gray-500">
+            Renseignez les informations de l'employé.
+        </p>
+    </div>
+
+    <!-- Messages -->
+    <div id="successMessage"
+        class="hidden mb-6 rounded-lg bg-green-50 border border-green-200 p-4 text-sm text-green-700">
+    </div>
+
+    <div id="errorMessage" class="hidden mb-6 rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+    </div>
+
+    <!-- Formulaire -->
+    <form id="employeeForm" method="POST" action="/employees/create"
+        class="bg-white shadow-sm ring-1 ring-gray-200 rounded-xl p-6">
+
+        <!-- Informations professionnelles -->
+        <div class="mb-8">
+
+            <h2 class="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-3">
+                Informations professionnelles
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+
+                <!-- Code employé -->
+                <div>
+                    <label for="emp_code" class="block text-sm font-medium text-gray-700 mb-2">
+                        Matricule de l'agent <span class="text-red-500">*</span>
+                    </label>
+
+                    <input type="text" id="emp_code" name="emp_code" required placeholder="Ex : 0000/ISEP-TH" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5
+                               text-sm text-gray-900 shadow-sm
+                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
+                               outline-none">
+                </div>
+                <div>
+                    <label for="card_no" class="block text-sm font-medium text-gray-700 mb-2">
+                        N° Carte RFID de l'agent <span class="text-red-500">*</span>
+                    </label>
+
+                    <input type="text" id="card_no" name="card_no" required placeholder="Ex : 111111111" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5
+                               text-sm text-gray-900 shadow-sm
+                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
+                               outline-none">
+                </div>
+
+                <div>
+                    <label for="card_no" class="block text-sm font-medium text-gray-700 mb-2">
+                        Fonction <span class="text-red-500">*</span>
+                    </label>
+
+                    <input type="text" id="position" name="position" required placeholder="Ex : 111111111" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5
+                               text-sm text-gray-900 shadow-sm
+                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
+                               outline-none">
+                </div>
+
+                <div>
+                    <label for="mobile" class="block text-sm font-medium text-gray-700 mb-2">
+                        Téléphone <span class="text-red-500">*</span>
+                    </label>
+
+                    <input type="text" id="mobile" name="mobile" required placeholder="Ex : +22 77 332 34 13" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5
+                               text-sm text-gray-900 shadow-sm
+                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
+                               outline-none">
+                </div>
+                <!-- Zones -->
+                <div class="md:col-span-2">
+
+                    <label for="area" class="block text-sm font-medium text-gray-700 mb-2">
+                        Zones <span class="text-red-500">*</span>
+                    </label>
+
+                    <select id="area" name="area" multiple required class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5
+                               text-sm text-gray-900 shadow-sm
+                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
+                               outline-none">
+                        {% for area in areas %}
+                        <option value="{{ area.id }}">
+                            {{ area.area_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+
+                    <p class="mt-1 text-xs text-gray-500">
+                        Maintenez Ctrl ou Cmd pour sélectionner plusieurs zones.
+                    </p>
+
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- Informations personnelles -->
+        <div class="mb-8">
+
+            <h2 class="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-3">
+                Informations personnelles
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+
+                <!-- Prénom -->
+                <div>
+                    <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">
+                        Prénom
+                    </label>
+
+                    <input type="text" id="first_name" name="first_name" placeholder="Prénom" class="w-full rounded-lg border border-gray-300 px-3 py-2.5
+                               text-sm shadow-sm
+                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
+                               outline-none">
+                </div>
+
+                <!-- Nom -->
+                <div>
+                    <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">
+                        Nom
+                    </label>
+
+                    <input type="text" id="last_name" name="last_name" placeholder="Nom" class="w-full rounded-lg border border-gray-300 px-3 py-2.5
+                               text-sm shadow-sm
+                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
+                               outline-none">
+                </div>
+
+                <!-- Téléphone -->
+                <div>
+                    <label for="mobile" class="block text-sm font-medium text-gray-700 mb-2">
+                        Téléphone
+                    </label>
+
+                    <input type="tel" id="mobile" name="mobile" placeholder="Ex : 770000000" class="w-full rounded-lg border border-gray-300 px-3 py-2.5
+                               text-sm shadow-sm
+                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
+                               outline-none">
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                        Email
+                    </label>
+
+                    <input type="email" id="email" name="email" placeholder="exemple@email.com" class="w-full rounded-lg border border-gray-300 px-3 py-2.5
+                               text-sm shadow-sm
+                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
+                               outline-none">
+                </div>
+
+            </div>
+        </div>
+
+
+        <!-- Boutons -->
+        <div class="flex items-center justify-end gap-3 pt-5 border-t border-gray-200">
+
+            <button type="reset" class="rounded-lg border border-gray-300 bg-white px-5 py-2.5
+                       text-sm font-medium text-gray-700
+                       hover:bg-gray-50
+                       focus:outline-none focus:ring-2 focus:ring-gray-500/20">
+                Annuler
+            </button>
+
+            <button type="submit" id="submitButton" class="inline-flex items-center gap-2 rounded-lg bg-indigo-600
+                       px-5 py-2.5 text-sm font-semibold text-white shadow-sm
+                       hover:bg-indigo-700
+                       focus:outline-none focus:ring-2 focus:ring-indigo-500/50
+                       disabled:opacity-50 disabled:cursor-not-allowed">
+
+                <span id="submitText">
+                    Créer l'employé
+                </span>
+
+                <!-- Loading -->
+                <svg id="loadingIcon" class="hidden h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+
+            </button>
+
+        </div>
+
+    </form>
+</div>
+
+{% endblock %}

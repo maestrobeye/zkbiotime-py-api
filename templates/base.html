@@ -216,8 +216,42 @@
         });
     </script>
     <script>
+        document.getElementById("exportExcel").addEventListener("click", function (event) {
+
+            event.preventDefault();
+
+            const start = document.getElementById("start_date").value;
+            const end = document.getElementById("end_date").value;
+
+            if (!start || !end) {
+                alert("Veuillez sélectionner les deux dates.");
+                return;
+            }
+
+            window.location.href =
+                `/attendance/export?start_date=${encodeURIComponent(start)}&end_date=${encodeURIComponent(end)}`;
+        });
+    </script>
+    <script>
         lucide.createIcons();
     </script>
+  <script>
+    const syncForm = document.getElementById("syncForm");
+    const syncBtn = document.getElementById("syncEmployeesBtn");
+    const syncText = document.getElementById("syncText");
+    const syncIcon = document.getElementById("syncIcon");
+
+    syncForm.addEventListener("submit", function () {
+
+        syncBtn.disabled = true;
+
+        syncText.textContent = "Synchronisation...";
+        syncIcon.classList.add("animate-spin");
+
+    });
+</script>
+
+
 
 </body>
 

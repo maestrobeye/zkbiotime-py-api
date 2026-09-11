@@ -14,12 +14,20 @@ import pandas as pd
 import io
 import os
 from datetime import date
-from pydantic import BaseModel
+from pydantic import BaseModel,EmailStr
 from fastapi import Query
 import httpx
 import requests
 import os
 from datetime import date, datetime, timezone
+
+from io import BytesIO
+
+from typing import Annotated
+
+import asyncio
+import httpx
+
 app = FastAPI(
     title="ZKBioTime RH"
 )
@@ -53,6 +61,21 @@ USERS = {
     "rh": "1234",
     "admin": "admin"
 }
+
+class EmployeeCreate(BaseModel):
+    emp_code: str
+    department: int
+    area: list[int]
+
+    hire_date: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    gender: Optional[str] = None
+    mobile: Optional[str] = None
+    national: Optional[str] = None
+    address: Optional[str] = None
+    email: Optional[EmailStr] = None
+    app_status: Optional[int] = None
 
 
 def check_login(request: Request):
@@ -347,6 +370,455 @@ def employees_page(
             }
         )
 
+async def get_next_position_code(client, headers):
+
+    response = await client.get(
+        "http://localhost/personnel/api/positions/",
+        headers=headers,
+    )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=response.text,
+        )
+
+    data = response.json()
+
+    # Selon la structure de ton API
+    positions = data.get("data", data)
+
+    codes = []
+
+    for position in positions:
+        try:
+            code = int(position.get("position_code"))
+            codes.append(code)
+        except (TypeError, ValueError):
+            pass
+
+    next_code = max(codes, default=0) + 1
+
+    return str(next_code)
+
+@app.post("/employees/create")
+
+async def create_employee(
+    request: Request,
+    emp_code: Annotated[str, Form()],
+    area: Annotated[list[int], Form()],
+    card_no: Annotated[int, Form()],
+    position: Annotated[str, Form()],
+    first_name: Annotated[str | None, Form()] = None,
+    last_name: Annotated[str | None, Form()] = None,
+    mobile: Annotated[str | None, Form()] = None,
+    email: Annotated[str | None, Form()] = None,
+):
+    url = f"http://localhost/personnel/api/employees/"
+
+    # Supprimer les champs None
+    payload = {
+        "emp_code": emp_code,
+        "department": 1,
+        "area": area,
+        "card_no": card_no,
+        "position": position,
+        "mobile": mobile
+    }
+    
+    if first_name:
+        payload["first_name"] = first_name
+
+    if last_name:
+        payload["last_name"] = last_name
+
+    if mobile:
+        payload["mobile"] = mobile
+
+    if email:
+        payload["email"] = email
+
+    token = request.session["zk_token"]
+
+    headers = {
+        "Authorization": f"Token {token}",
+        "Content-Type": "application/json",
+        "X-API-Key": "1234",
+    }
+
+    async with httpx.AsyncClient(timeout=30) as client:
+
+        # ==========================================
+        # 1. Créer la position
+        # ==========================================
+
+         # Récupérer le prochain position_code
+        position_code = await get_next_position_code(
+            client,
+            headers
+        )
+
+        # Créer la position
+        payload_position = {
+            "position_code": position_code,
+            "position_name": position,
+        }
+
+        position_response = await client.post(
+            "http://localhost/personnel/api/positions/",
+            json=payload_position,
+            headers=headers,
+        )
+
+        if position_response.status_code not in (200, 201):
+            raise HTTPException(
+                status_code=position_response.status_code,
+                detail=(
+                    "Erreur lors de la création de la position : "
+                    + position_response.text
+                ),
+            )
+
+        position_data = position_response.json()
+        # ==========================================
+        # 2. Créer l'employé
+        # ==========================================
+
+        payload = {
+            "emp_code": emp_code,
+            "department": 1,
+            "area": area,
+            "card_no": card_no,
+            "position": position_data["position_code"],
+        }
+
+        if first_name:
+            payload["first_name"] = first_name
+
+        if last_name:
+            payload["last_name"] = last_name
+
+        if mobile:
+            payload["mobile"] = mobile
+
+        if email:
+            payload["email"] = email
+
+        employee_response = await client.post(
+            "http://localhost/personnel/api/employees/",
+            json=payload,
+            headers=headers,
+        )
+
+        if employee_response.status_code not in (200, 201):
+            raise HTTPException(
+                status_code=employee_response.status_code,
+                detail=(
+                    "Erreur lors de la création de l'employé : "
+                    + employee_response.text
+                ),
+            )
+        
+    if employee_response.status_code not in (200, 201):
+        raise HTTPException(
+            status_code=employee_response.status_code,
+            detail=employee_response.text,
+        )
+
+    return RedirectResponse(
+        url="/employees",
+        status_code=303
+    )
+
+@app.get("/employees/create")
+async def get_form(request: Request):
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.get(
+            "http://localhost/personnel/api/areas/",
+            headers={
+                "Authorization": f"Token {request.session['zk_token']}",
+                "X-API-Key": "1234",
+            },
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(response.status_code, response.text)
+
+    data = response.json()
+
+    areas = data.get("data", [])
+   
+    return templates.TemplateResponse(
+        request=request,
+        name="employeeForm.html",
+        context={
+            "areas": areas
+        }
+    )
+
+@app.get("/employees/edit/{employee_id}")
+async def edit_employee_page(
+    request: Request,
+    employee_id: int,
+):
+    headers = {
+        "Authorization": f"Token {request.session['zk_token']}",
+        "Content-Type": "application/json",
+        "X-API-Key": "1234",
+    }
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        employee_response, area_response = await asyncio.gather(
+            client.get(
+                f"http://localhost/personnel/api/employees/{employee_id}/",
+                headers=headers,
+            ),
+            client.get(
+                "http://localhost/personnel/api/areas/",
+                headers=headers,
+            ),
+        )
+
+    employee = employee_response.json()
+
+   # Vérification employee
+    if employee_response.status_code != 200:
+        raise HTTPException(
+            status_code=employee_response.status_code,
+            detail=employee_response.text,
+        )
+
+    # Vérification areas
+    if area_response.status_code != 200:
+        raise HTTPException(
+            status_code=area_response.status_code,
+            detail=area_response.text,
+        )
+
+    employee = employee_response.json()
+    area = area_response.json()
+
+    employee_area_ids = [a["id"] for a in employee.get("area", [])]
+
+    return templates.TemplateResponse(
+        request=request,
+        name="employee_edit.html",
+        context={
+            "request": request,
+            "employee": employee,
+            "area": area,
+            "employee_area_ids": employee_area_ids,
+        },
+    )
+
+# @app.post("/employees/edit/{employee_id}")
+# async def update_employee(
+#     request: Request,
+#     employee_id: int,
+
+#     emp_code: Annotated[str, Form()],
+#     area: Annotated[list[int], Form()],
+#     card_no: Annotated[int, Form()],
+#     position: Annotated[str, Form()],
+
+#     first_name: Annotated[str | None, Form()] = None,
+#     last_name: Annotated[str | None, Form()] = None,
+#     mobile: Annotated[str | None, Form()] = None,
+#     email: Annotated[str | None, Form()] = None,
+# ):
+#     token = request.session["zk_token"]
+
+#     headers = {
+#         "Authorization": f"Token {token}",
+#         "Content-Type": "application/json",
+#         "X-API-Key": "1234",
+#     }
+
+#     payload = {
+#         "emp_code": emp_code,
+#         "department": 1,
+#         "area": area,
+#         "card_no": card_no,
+#         "position": position,
+#         "first_name": first_name,
+#         "last_name": last_name,
+#         "mobile": mobile,
+#         "email": email,
+#     }
+
+#     async with httpx.AsyncClient(timeout=30) as client:
+
+#         response = await client.put(
+#             f"http://localhost/personnel/api/employees/{employee_id}/",
+#             json=payload,
+#             headers=headers,
+#         )
+
+#     if response.status_code not in (200, 201):
+#         raise HTTPException(
+#             status_code=response.status_code,
+#             detail=response.text,
+#         )
+
+#     return RedirectResponse(
+#         url="/employees",
+#         status_code=303,
+#     )
+
+@app.post("/employees/edit/{employee_id}")
+async def update_employee(
+    request: Request,
+    employee_id: int,
+
+    emp_code: Annotated[str, Form()],
+    area: Annotated[list[int], Form()] = [],
+    card_no: Annotated[int | None, Form()] = None,
+    position: Annotated[str, Form()] = "",
+    first_name: Annotated[str | None, Form()] = None,
+    last_name: Annotated[str | None, Form()] = None,
+    mobile: Annotated[str | None, Form()] = None,
+    email: Annotated[str | None, Form()] = None,
+):
+    token = request.session["zk_token"]
+
+    headers = {
+        "Authorization": f"Token {token}",
+        "Content-Type": "application/json",
+        "X-API-Key": "1234",
+    }
+
+    employee_url = (
+        f"http://localhost/personnel/api/employees/{employee_id}/"
+    )
+
+    async with httpx.AsyncClient(timeout=30) as client:
+
+        # ==========================================
+        # 1. Récupérer l'employé actuel
+        # ==========================================
+
+        employee_response = await client.get(
+            employee_url,
+            headers=headers,
+        )
+
+        if employee_response.status_code != 200:
+            raise HTTPException(
+                status_code=employee_response.status_code,
+                detail=(
+                    "Erreur lors de la récupération de l'employé : "
+                    + employee_response.text
+                ),
+            )
+
+        employee = employee_response.json()
+
+        # ==========================================
+        # 2. Gérer la position
+        # ==========================================
+
+        current_position = employee.get("position")
+
+        position_code = None
+
+        if current_position:
+            current_position_name = current_position.get("position_name")
+            current_position_code = current_position.get("position_code")
+
+            # La position n'a pas changé
+            if position == current_position_name:
+                position_code = current_position_code
+
+        # ==========================================
+        # 3. Si la position a changé
+        # ==========================================
+
+        if position_code is None:
+
+            # Récupérer le prochain position_code
+            position_code = await get_next_position_code(
+                client,
+                headers
+            )
+
+            # Créer la nouvelle position
+            payload_position = {
+                "position_code": position_code,
+                "position_name": position,
+            }
+
+            position_response = await client.post(
+                "http://localhost/personnel/api/positions/",
+                json=payload_position,
+                headers=headers,
+            )
+
+            if position_response.status_code not in (200, 201):
+                raise HTTPException(
+                    status_code=position_response.status_code,
+                    detail=(
+                        "Erreur lors de la création de la position : "
+                        + position_response.text
+                    ),
+                )
+
+            # Utiliser le code retourné par l'API
+            position_data = position_response.json()
+
+            position_code = position_data["position_code"]
+
+        # ==========================================
+        # 4. Préparer le payload employé
+        # ==========================================
+
+        payload = {
+            "emp_code": emp_code,
+            "department": 1,
+            "area": area,
+            "card_no": card_no,
+            "position": position_code,
+        }
+
+        if first_name:
+            payload["first_name"] = first_name
+
+        if last_name:
+            payload["last_name"] = last_name
+
+        if mobile:
+            payload["mobile"] = mobile
+
+        if email:
+            payload["email"] = email
+
+        # ==========================================
+        # 5. Mise à jour de l'employé
+        # ==========================================
+
+        update_response = await client.put(
+            employee_url,
+            json=payload,
+            headers=headers,
+        )
+
+        if update_response.status_code not in (200, 201):
+            raise HTTPException(
+                status_code=update_response.status_code,
+                detail=(
+                    "Erreur lors de la mise à jour de l'employé : "
+                    + update_response.text
+                ),
+            )
+
+    # ==========================================
+    # 6. Retour vers la liste
+    # ==========================================
+
+    return RedirectResponse(
+        url="/employees",
+        status_code=303,
+    )
+
 # -----------------------------
 # DETAIL EMPLOYEE
 # -----------------------------
@@ -409,9 +881,9 @@ def employee_detail(
         "last_name": emp[2],
         "email": emp[3],
         "department": emp[4],
+        "emp_id": emp_id
     }
 
-    print(employee)
     return templates.TemplateResponse(
         request=request,
         name="employee.html",
@@ -450,6 +922,47 @@ def get_employee_ids():
     finally:
         cur.close()
         conn.close()
+
+@app.post("/employees/sync")
+async def sync_employees(request: Request):
+
+    token = request.session["zk_token"]
+
+    employee_ids = get_employee_ids()
+
+    headers = {
+        "Authorization": f"Token {token}",
+        "Content-Type": "application/json",
+        "X-API-Key": "1234",
+    }
+
+    employees = [
+        int(x)
+        for x in employee_ids.split(",")
+        if x.strip()
+    ]
+    payload = {
+        "employees": employees
+    }
+
+    async with httpx.AsyncClient(timeout=120) as client:
+
+        response = await client.post(
+            "http://localhost/personnel/api/employees/resync_to_device/",
+            json=payload,
+            headers=headers,
+        )
+
+    if response.status_code not in (200, 201):
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=response.text,
+        )
+    print(response.json())
+    return RedirectResponse(
+        url="/employees",
+        status_code=303
+    )
 
 def get_attendance_status(clock_in: str | None = None):
 
@@ -529,61 +1042,143 @@ async def attendance_page(
 # EXPORT EXCEL
 # -----------------------------
 
-@app.get(
-    "/attendance/export"
-)
-def export_excel(
-    request:Request
+# @app.get(
+#     "/attendance/export"
+# )
+# async def export_excel(
+#     request:Request
+# ):
+
+#     if not check_login(request):
+#         return RedirectResponse("/login")
+
+#     conn=get_conn()
+
+#     df= pd.read_sql(
+#         """
+#         SELECT
+#             e.emp_code,
+#             e.first_name,
+#             e.last_name,
+#             a.att_date,
+#             a.clock_in,
+#             a.clock_out
+
+#         FROM att_payloadtimecard a
+
+#         JOIN personnel_employee e
+#         ON e.id=a.emp_id
+#         """,
+#         conn
+#     )
+
+#     conn.close()
+
+#     output=io.BytesIO()
+
+#     with pd.ExcelWriter(
+#         output,
+#         engine="openpyxl"
+#     ) as writer:
+
+#         df.to_excel(
+#             writer,
+#             index=False,
+#             sheet_name="Pointages"
+#         )
+
+#     output.seek(0)
+
+#     return StreamingResponse(
+#         output,
+#         media_type=
+#         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+#         headers={
+#             "Content-Disposition":
+#             "attachment; filename=pointages.xlsx"
+#         }
+#     )
+
+@app.get("/attendance/export")
+async def attendance_export(
+    request: Request,
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
 ):
+    print(start_date)
+    # Dates par défaut : année en cours
+    today = date.today()
 
-    if not check_login(request):
-        return RedirectResponse("/login")
+    if start_date is None:
+        start_date = date(today.year, 1, 1)
 
-    conn=get_conn()
+    if end_date is None:
+        end_date = date(today.year, 12, 31)
 
-    df=pd.read_sql(
-        """
-        SELECT
-            e.emp_code,
-            e.first_name,
-            e.last_name,
-            a.att_date,
-            a.clock_in,
-            a.clock_out
+    employee_ids = get_employee_ids()
 
-        FROM att_payloadtimecard a
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.get(
+            ATT_API_URL,
+            params={
+                "employees": employee_ids,
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "page_size": 300,
+                "page": 1,
+                "departments": -1,
+                "areas": -1,
+                "groups": -1,
+            },
+            headers={
+                "Authorization": f"Token {request.session['zk_token']}",
+                "X-API-Key": "1234",
+            },
+        )
 
-        JOIN personnel_employee e
-        ON e.id=a.emp_id
-        """,
-        conn
-    )
+    if response.status_code != 200:
+        raise HTTPException(response.status_code, response.text)
 
-    conn.close()
+    data = response.json()
 
-    output=io.BytesIO()
+    records = data.get("data", [])
 
-    with pd.ExcelWriter(
-        output,
-        engine="openpyxl"
-    ) as writer:
+    # Transformer en DataFrame
+    df = pd.DataFrame(records)
 
+    # Supprimer les timezones des colonnes datetime
+    for col in df.select_dtypes(include=["datetimetz"]).columns:
+        df[col] = df[col].dt.tz_localize(None)
+
+    # Créer le fichier Excel en mémoire
+    output = BytesIO()
+
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
         df.to_excel(
             writer,
             index=False,
-            sheet_name="Pointages"
+            sheet_name="Attendance"
         )
 
     output.seek(0)
 
+    filename = (
+        f"attendance_{start_date.isoformat()}_"
+        f"{end_date.isoformat()}.xlsx"
+    )
+
+    print(len(employee_ids))
+    print(len(records))
+
     return StreamingResponse(
         output,
-        media_type=
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        media_type=(
+            "application/vnd.openxmlformats-officedocument"
+            ".spreadsheetml.sheet"
+        ),
         headers={
-            "Content-Disposition":
-            "attachment; filename=pointages.xlsx"
-        }
+            "Content-Disposition": f'attachment; filename="{filename}"'
+        },
     )
 
 def to_utc(dt):

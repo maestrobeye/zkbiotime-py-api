@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+
+<div class="max-w-5xl mx-auto px-4">
+
+    <!-- Header -->
+    <div class="mb-2">
+        <h1 class="text-2xl font-bold text-gray-900">
+            Créer un employé
+        </h1>
+        <p class="mt-1 text-sm text-gray-500">
+            Renseignez les informations de l'employé.
+        </p>
+    </div>
+
+    <!-- Messages -->
+    <div id="successMessage"
+        class="hidden mb-6 rounded-lg bg-green-50 border border-green-200 p-4 text-sm text-green-700">
+    </div>
+
+    <div id="errorMessage" class="hidden mb-6 rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+    </div>
+
+    <!-- Formulaire -->
+    <form method="POST" action="/employees/edit/{{ employee.id }}"
+        class="bg-white shadow-sm ring-1 ring-gray-200 rounded-xl p-6">
+
+        <!-- Code employé -->
+        <div>
+            <label for="emp_code" class="block text-sm font-medium text-gray-700 mb-2">
+                Code employé
+            </label>
+
+            <input type="text" id="emp_code" name="emp_code" value="{{ employee.emp_code }}" required class="w-full rounded-lg border border-gray-300 px-3 py-2.5
+                   text-sm focus:border-indigo-500 focus:ring-2
+                   focus:ring-indigo-500/20 outline-none">
+        </div>
+
+
+        <!-- Card number -->
+        <div class="mt-6">
+            <label for="card_no" class="block text-sm font-medium text-gray-700 mb-2">
+                Numéro de carte
+            </label>
+
+            <input type="number" id="card_no" name="card_no" value="{{ employee.card_no or '' }}" class="w-full rounded-lg border border-gray-300 px-3 py-2.5
+                   text-sm focus:border-indigo-500 focus:ring-2
+                   focus:ring-indigo-500/20 outline-none">
+        </div>
+        <!-- Areas -->
+        <!-- Areas -->
+        <div class="mt-6">
+            <label for="area" class="block text-sm font-medium text-gray-700 mb-2">
+                Zones
+            </label>
+
+            <select id="area" name="area" multiple class="w-full rounded-lg border border-gray-300 px-3 py-2.5
+               text-sm focus:border-indigo-500 focus:ring-2
+               focus:ring-indigo-500/20 outline-none">
+                {% for a in area.data %}
+                <option value="{{ a.area_code }}" {% if a.id in employee_area_ids %}selected{% endif %}>
+                    {{ a.area_code }} - {{ a.area_name }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <p class="mt-1 text-xs text-gray-500">
+                Maintenez Ctrl (Windows/Linux) ou Cmd (Mac) pour sélectionner plusieurs zones.
+            </p>
+        </div>
+
+
+
+        <!-- Position -->
+        <div class="mt-6">
+            <label for="position" class="block text-sm font-medium text-gray-700 mb-2">
+                Position
+            </label>
+
+            <input type="text" id="position" name="position" value="{{ employee.position.position_name or '' }}"
+                required class="w-full rounded-lg border border-gray-300 px-3 py-2.5
+                   text-sm focus:border-indigo-500 focus:ring-2
+                   focus:ring-indigo-500/20 outline-none">
+        </div>
+
+
+        <!-- Prénom -->
+        <div class="mt-6">
+            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">
+                Prénom
+            </label>
+
+            <input type="text" id="first_name" name="first_name" value="{{ employee.first_name or '' }}" class="w-full rounded-lg border border-gray-300 px-3 py-2.5
+                   text-sm focus:border-indigo-500 focus:ring-2
+                   focus:ring-indigo-500/20 outline-none">
+        </div>
+
+
+        <!-- Nom -->
+        <div class="mt-6">
+            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">
+                Nom
+            </label>
+
+            <input type="text" id="last_name" name="last_name" value="{{ employee.last_name or '' }}" class="w-full rounded-lg border border-gray-300 px-3 py-2.5
+                   text-sm focus:border-indigo-500 focus:ring-2
+                   focus:ring-indigo-500/20 outline-none">
+        </div>
+
+
+        <!-- Téléphone -->
+        <div class="mt-6">
+            <label for="mobile" class="block text-sm font-medium text-gray-700 mb-2">
+                Téléphone
+            </label>
+
+            <input type="tel" id="mobile" name="mobile" value="{{ employee.mobile or '' }}" class="w-full rounded-lg border border-gray-300 px-3 py-2.5
+                   text-sm focus:border-indigo-500 focus:ring-2
+                   focus:ring-indigo-500/20 outline-none">
+        </div>
+
+
+        <!-- Email -->
+        <div class="mt-6">
+            <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                Email
+            </label>
+
+            <input type="email" id="email" name="email" value="{{ employee.email or '' }}" class="w-full rounded-lg border border-gray-300 px-3 py-2.5
+                   text-sm focus:border-indigo-500 focus:ring-2
+                   focus:ring-indigo-500/20 outline-none">
+        </div>
+
+
+        <!-- Boutons -->
+        <div class="mt-8 flex justify-end gap-3">
+
+            <a href="/employees" class="rounded-lg border border-gray-300 bg-white px-5 py-2.5
+                   text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Annuler
+            </a>
+
+            <button type="submit" class="rounded-lg bg-indigo-600 px-5 py-2.5
+                   text-sm font-semibold text-white
+                   hover:bg-indigo-700">
+                Enregistrer
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+{% endblock %}
