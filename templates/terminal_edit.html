@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier le terminal{% endblock %}
+
+{% block content %}
+
+<div class="max-w-3xl mx-auto space-y-6">
+
+    <!-- Header -->
+    <div>
+        <h4 class="text-3xl font-bold text-gray-800">
+            Modifier le terminal
+        </h4>
+
+        <p class="text-gray-500 mt-1">
+            Modifier les paramètres du pointeur biométrique
+        </p>
+    </div>
+
+
+    <!-- Formulaire -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+
+        <form method="POST" action="/pointeurs/{{ terminal.id }}/edit">
+
+            <div class="p-6 space-y-5">
+
+                <!-- Numéro de série -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Numéro de série
+                    </label>
+
+                    <input type="text" readonly name="sn" value="{{ terminal.sn or '' }}" required class="w-full rounded-lg border border-gray-300
+                               px-4 py-2.5 text-sm font-mono bg-gray-100
+                               focus:ring-2 focus:ring-blue-500
+                               focus:outline-none">
+                </div>
+
+
+                <!-- Alias -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Nom de l'appareil
+                    </label>
+
+                    <input type="text" name="alias" value="{{ terminal.alias or '' }}" required class="w-full rounded-lg border border-gray-300
+                               px-4 py-2.5 text-sm
+                               focus:ring-2 focus:ring-blue-500
+                               focus:outline-none">
+                </div>
+
+
+                <!-- IP -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Adresse IP
+                    </label>
+
+                    <input type="text" readonly name="ip_address" value="{{ terminal.ip_address or '' }}" required
+                        class="w-full rounded-lg border border-gray-300
+                               px-4 py-2.5 text-sm font-mono bg-gray-100
+                               focus:ring-2 focus:ring-blue-500
+                               focus:outline-none">
+                </div>
+
+
+                <!-- TZ / Heartbeat -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    <!-- Timezone -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Fuseau horaire
+                        </label>
+
+                        <input type="number" name="terminal_tz" value="{{ terminal.terminal_tz or 0 }}" required class="w-full rounded-lg border border-gray-300
+                                   px-4 py-2.5 text-sm
+                                   focus:ring-2 focus:ring-blue-500
+                                   focus:outline-none">
+                    </div>
+
+
+                    <!-- Heartbeat -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Heartbeat
+                        </label>
+
+                        <input type="number" name="heartbeat" value="{{ terminal.heartbeat or 10 }}" min="1" required
+                            class="w-full rounded-lg border border-gray-300
+                                   px-4 py-2.5 text-sm
+                                   focus:ring-2 focus:ring-blue-500
+                                   focus:outline-none">
+                    </div>
+
+                </div>
+
+
+                <!-- Zone -->
+                <div>
+                    <div class="md:col-span-2">
+
+                        <label for="area" class="block text-sm font-medium text-gray-700 mb-2">
+                            Zones <span class="text-red-500">*</span>
+                        </label>
+
+                        <select id="area" name="area" required class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5
+                                           text-sm text-gray-900 shadow-sm
+                                           focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
+                                           outline-none">
+                            {% for area in areas %}
+                            <option value="{{ area.id or ''}}">
+                                {{ area.area_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                </div>
+
+
+                <!-- Footer -->
+                <div class="px-6 py-4 bg-gray-50
+                        border-t border-gray-100
+                        flex items-center justify-between">
+
+                    <a href="/pointeurs" class="px-4 py-2.5 rounded-lg
+                          border border-gray-300
+                          text-sm font-medium text-gray-700
+                          hover:bg-gray-100">
+
+                        Annuler
+
+                    </a>
+
+
+                    <button type="submit" class="px-5 py-2.5 rounded-lg
+                           bg-blue-600 text-white
+                           text-sm font-medium
+                           hover:bg-blue-700">
+
+                        Enregistrer les modifications
+
+                    </button>
+
+                </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

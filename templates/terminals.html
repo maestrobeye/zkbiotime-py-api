@@ -18,18 +18,31 @@
                 Liste des pointeurs biométriques
             </p>
         </div>
-
-        <!-- Recherche -->
-        <div>
-            <input id="searchInput" type="text" placeholder="Rechercher un terminal..." class="w-72 rounded-lg border border-gray-300
-                       px-4 py-2.5 text-sm
-                       focus:ring-2 focus:ring-blue-500
-                       focus:outline-none">
-        </div>
-
     </div>
 
+    <form method="POST" action="/pointeurs/upload-all"
+        onsubmit="return confirm('Voulez-vous uploader les données vers tous les terminaux ?');">
 
+        <button type="submit" class="inline-flex items-center gap-2
+             px-4 py-2.5 rounded-lg
+             bg-indigo-600 text-white
+             text-sm font-medium
+             hover:bg-indigo-700 transition">
+
+            <svg id="syncIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                stroke="currentColor" class="w-5 h-5">
+
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5
+                   M20 20v-5h-5
+                   M19.07 8.93A8 8 0 0 0 5.34 6.34L4 9
+                   M4.93 15.07A8 8 0 0 0 18.66 17.66L20 15" />
+
+            </svg>
+            Synchroniser les données aux appareils
+
+        </button>
+
+    </form>
     <!-- Statistique -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 px-6 py-4">
 
@@ -133,39 +146,39 @@
                                  px-2.5 py-1 rounded-full
                                  bg-green-50 text-green-700
                                  text-xs font-medium">
-                    
+
                         <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                    
+
                         En ligne
-                    
+
                     </span>
-                    
+
                     {% elif terminal.state == "3" or terminal.state == 3 %}
-                    
+
                     <span class="inline-flex items-center gap-1.5
                                  px-2.5 py-1 rounded-full
                                  bg-red-50 text-red-700
                                  text-xs font-medium">
-                    
+
                         <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-                    
+
                         Hors ligne
-                    
+
                     </span>
-                    
+
                     {% else %}
-                    
+
                     <span class="inline-flex items-center gap-1.5
                                  px-2.5 py-1 rounded-full
                                  bg-gray-100 text-gray-600
                                  text-xs font-medium">
-                    
+
                         État inconnu
-                    
+
                     </span>
-                    
+
                     {% endif %}
-                    
+
 
                 </div>
 
@@ -292,18 +305,60 @@
 
             <!-- Footer -->
             <div class="px-5 py-3 bg-gray-50
-                        rounded-b-xl
-                        flex items-center justify-between">
+            rounded-b-xl
+            flex items-center justify-between">
 
-                <span class="text-xs text-gray-500">
-                    Firmware : {{ terminal.fw_ver }}
-                </span>
+                <div>
+                    <p class="text-xs text-gray-500">
+                        Firmware : {{ terminal.fw_ver }}
+                    </p>
 
-                <span class="text-xs text-gray-500">
-                    Push : {{ terminal.push_ver }}
-                </span>
+                    <p class="text-xs text-gray-500">
+                        Push : {{ terminal.push_ver }}
+                    </p>
+                </div>
 
+                <a href="/pointeurs/{{ terminal.id }}/edit" class="inline-flex items-center gap-2
+              px-3 py-2 rounded-lg
+              bg-blue-600 text-white
+              text-sm font-medium
+              hover:bg-blue-700 transition">
+
+                    Modifier
+
+                </a>
+
+                <form method="POST" action="/pointeurs/{{ terminal.id }}/reboot">
+
+                    <button type="submit" class="inline-flex items-center gap-2
+                           px-3 py-2 rounded-lg
+                           bg-orange-500 text-white
+                           text-sm font-medium
+                           hover:bg-orange-600 transition">
+
+                        Redémarrer
+
+                    </button>
+
+                </form>
+
+                <form method="POST" action="/pointeurs/{{ terminal.id }}/delete"
+                    onsubmit="return confirm('Voulez-vous vraiment supprimer ce terminal ?');">
+
+                    <button type="submit" class="inline-flex items-center gap-2
+                         px-3 py-2 rounded-lg
+                         bg-red-600 text-white
+                         text-sm font-medium
+                         hover:bg-red-700 transition">
+
+                        Supprimer
+
+                    </button>
+
+                </form>
             </div>
+
+
 
         </div>
 

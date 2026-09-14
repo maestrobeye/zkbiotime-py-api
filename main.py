@@ -18,7 +18,7 @@ from fastapi import Query
 import httpx
 import requests
 import os
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, time
 
 from io import BytesIO
 
@@ -188,74 +188,23 @@ async def dashboard(request: Request):
         FROM personnel_employee
         """
     )
-
+    
     employees = cur.fetchone()[0]
-
-
-    cur.execute(
-        """
-        SELECT COUNT(*)
-        FROM att_payloadtimecard
-        WHERE att_date=CURRENT_DATE
-        """
-    )
-
-    today = cur.fetchone()[0]
-
-    cur.execute("""
-            SELECT
-                t.id,
-                t.emp_id,
-                e.emp_code,
-                e.first_name,
-                e.last_name,
-                t.punch_time,
-                t.punch_state,
-                t.terminal_alias,
-                t.verify_type
-            FROM iclock_transaction t
-            LEFT JOIN personnel_employee e
-                ON e.id = t.emp_id
-              WHERE DATE(t.punch_time) = CURRENT_DATE
-            ORDER BY t.punch_time DESC
-            LIMIT 100
-        """)
-
-    rows = cur.fetchall()
-
-    punches = [
-        {
-            "id": r[0],
-            "emp_id": r[1],
-            "emp_code": r[2],
-            "first_name": r[3],
-            "last_name": r[4],
-            "punch_time": r[5],
-            "punch_state": r[6],
-            "terminal_alias": r[7],
-            "verify_type": r[8],
-        }
-        for r in rows
-    ]
-
-
     cur.close()
     conn.close()
 
+    today = datetime.now().date()
+
+    start_date = datetime.combine(today, time.min)
+    end_date = datetime.combine(today, time.max)
+    
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.get(
-            "http://localhost/iclock/api/transactions/?page_size=1000",
-            # params={
-            #     "employees": employee_ids,
-            #     "query": 32,
-            #     "start_date": start_date.isoformat(),
-            #     "end_date": end_date.isoformat(),
-            #     "page": page,
-            #     "page_size": page_size,
-            #     "departments" : -1,
-            #     "areas" : -1,
-            #     "groups" : -1
-            # },
+            "http://localhost/iclock/api/transactions/?page_size=20",
+            params={
+                "start_time": start_date.isoformat(),
+                "end_time": end_date.isoformat(),
+            },
             headers={
                 "Authorization": f"Token {request.session['zk_token']}",
                 "X-API-Key": "1234",
@@ -266,8 +215,6 @@ async def dashboard(request: Request):
         raise HTTPException(response.status_code, response.text)
 
     data = response.json()
-
-    print(data)
 
     return templates.TemplateResponse(
         request=request,
@@ -304,20 +251,30 @@ def employees_page(
 
     cur.execute(
         """
-        SELECT
-            e.id,
-            e.emp_code,
-            e.first_name,
-            e.last_name,
-            e.email,
-            pp.position_name
-
-        FROM personnel_employee e
-
-        LEFT JOIN personnel_position pp
-        ON pp.id=e.position_id
-
-        ORDER BY e.last_name
+       SELECT
+        e.id,
+        e.emp_code,
+        e.first_name,
+        e.last_name,
+        e.email,
+        pp.position_name,
+        ARRAY_AGG(DISTINCT pa.area_name)
+            FILTER (WHERE pa.area_name IS NOT NULL) AS areas
+    FROM personnel_employee e
+    LEFT JOIN personnel_position pp
+        ON pp.id = e.position_id
+    LEFT JOIN personnel_employee_area pea
+        ON e.id = pea.employee_id
+    LEFT JOIN personnel_area pa
+        ON pa.id = pea.area_id
+    GROUP BY
+        e.id,
+        e.emp_code,
+        e.first_name,
+        e.last_name,
+        e.email,
+        pp.position_name
+    ORDER BY e.last_name
         LIMIT %s OFFSET %s
         """,
         (PAGE_SIZE, offset)
@@ -339,10 +296,10 @@ def employees_page(
                 "first_name": r[2],
                 "last_name": r[3],
                 "email": r[4],
-                "position": r[5]
+                "position": r[5],
+                "areas": r[6] or []            
             }
         )
-
     total_pages = (total + PAGE_SIZE - 1) // PAGE_SIZE
     
     return templates.TemplateResponse(
@@ -887,9 +844,31 @@ def get_employee_ids():
 @app.post("/employees/sync")
 async def sync_employees(request: Request):
 
-    token = request.session["zk_token"]
+    token = request.session.get("zk_token")
+
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Session expirée ou token manquant."
+        )
+
+    # --------------------------------------------------
+    # Employés
+    # --------------------------------------------------
 
     employee_ids = get_employee_ids()
+
+    employees = [
+        int(x)
+        for x in employee_ids.split(",")
+        if x.strip()
+    ]
+
+    if not employees:
+        raise HTTPException(
+            status_code=400,
+            detail="Aucun employé trouvé."
+        )
 
     headers = {
         "Authorization": f"Token {token}",
@@ -897,29 +876,87 @@ async def sync_employees(request: Request):
         "X-API-Key": "1234",
     }
 
-    employees = [
-        int(x)
-        for x in employee_ids.split(",")
-        if x.strip()
-    ]
-    payload = {
-        "employees": employees
-    }
-
     async with httpx.AsyncClient(timeout=120) as client:
 
-        response = await client.post(
-            "http://localhost/personnel/api/employees/resync_to_device/",
-            json=payload,
+        # --------------------------------------------------
+        # 1. Récupérer toutes les zones
+        # --------------------------------------------------
+
+        areas_response = await client.get(
+            "http://localhost/personnel/api/areas/",
             headers=headers,
         )
 
-    if response.status_code not in (200, 201):
-        raise HTTPException(
-            status_code=response.status_code,
-            detail=response.text,
+        if areas_response.status_code != 200:
+            raise HTTPException(
+                status_code=areas_response.status_code,
+                detail=areas_response.text,
+            )
+        areas_data = areas_response.json()
+
+        areas = [
+            int(area["id"])
+            for area in areas_data.get("data", [])
+        ]
+
+        if not areas:
+            raise HTTPException(
+                status_code=400,
+                detail="Aucune zone trouvée."
+            )
+
+        print("Employés :", employees)
+        print("Zones :", areas)
+
+        # --------------------------------------------------
+        # 2. Affecter toutes les zones à tous les employés
+        # --------------------------------------------------
+
+        adjust_payload = {
+            "employees": employees,
+            "areas": areas,
+        }
+
+        print("Adjust area :", adjust_payload)
+
+        adjust_response = await client.post(
+            "http://localhost/personnel/api/employees/adjust_area/",
+            json=adjust_payload,
+            headers=headers,
         )
-    print(response.json())
+
+        if adjust_response.status_code not in (200, 201):
+            raise HTTPException(
+                status_code=adjust_response.status_code,
+                detail=adjust_response.text,
+            )
+
+        # --------------------------------------------------
+        # 3. Resynchroniser les employés sur les terminaux
+        # --------------------------------------------------
+
+        resync_payload = {
+            "employees": employees
+        }
+
+        print("Resync :", resync_payload)
+
+        response = await client.post(
+            "http://localhost/personnel/api/employees/resync_to_device/",
+            json=resync_payload,
+            headers=headers,
+        )
+
+        if response.status_code not in (200, 201):
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=response.text,
+            )
+
+    # --------------------------------------------------
+    # Retour
+    # --------------------------------------------------
+
     return RedirectResponse(
         url="/employees",
         status_code=303
@@ -1185,4 +1222,272 @@ async def get_terminals(request: Request):
         context={
           "terminals": response.json()
         },
+    )
+
+@app.get("/pointeurs/{terminal_id}/edit")
+async def edit_terminal_form(
+    terminal_id: int,
+    request: Request,
+):
+    token = request.session.get("zk_token")
+
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Session expirée ou token manquant."
+        )
+
+    headers = {
+        "Authorization": f"Token {token}",
+        "Content-Type": "application/json",
+        "X-API-Key": "1234",
+    }
+
+    async with httpx.AsyncClient(timeout=30) as client:
+
+        responseTerminal, areasList = await asyncio.gather(
+          client.get(
+                f"http://localhost/iclock/api/terminals/{terminal_id}/",
+            headers=headers,
+          ),
+          client.get(
+            "http://localhost/personnel/api/areas/",
+           headers=headers)
+        )
+    
+
+
+    areas = areasList.json()
+    if responseTerminal.status_code != 200:
+        raise HTTPException(
+            status_code=responseTerminal.status_code,
+            detail=responseTerminal.text,
+        )
+
+    terminal = responseTerminal.json()
+    print(terminal)
+    return templates.TemplateResponse(
+        request=request,
+        name="terminal_edit.html",
+        context={
+            "terminal": terminal,
+            "areas" : areas["data"]
+        },
+    )
+
+
+@app.post("/pointeurs/{terminal_id}/edit")
+async def update_terminal(
+    terminal_id: int,
+    request: Request,
+):
+    token = request.session.get("zk_token")
+
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Session expirée ou token manquant."
+        )
+
+    form = await request.form()
+
+    payload = {
+        "alias": form.get("alias"),
+        "terminal_tz": 0,
+        "heartbeat": int(form.get("heartbeat")),
+        "area": int(form.get("area")),
+    }
+    
+    conn = get_conn()
+    cur = conn.cursor()
+
+    try:
+        cur.execute(
+            """
+            UPDATE iclock_terminal
+            SET is_attendance = 1, terminal_tz = 0
+            """
+        )
+
+        conn.commit()
+
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        cur.close()
+        conn.close()
+
+
+    headers = {
+        "Authorization": f"Token {token}",
+        "Content-Type": "application/json",
+        "X-API-Key": "1234",
+    }
+
+    async with httpx.AsyncClient(timeout=30) as client:
+
+        response = await client.put(
+            f"http://localhost/iclock/api/terminals/{terminal_id}/",
+            headers=headers,
+            json=payload,
+        )
+
+    if response.status_code not in (200, 201):
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=response.text,
+        )
+        
+    return RedirectResponse(
+        url="/pointeurs",
+        status_code=303,
+    )
+
+@app.post("/pointeurs/{terminal_id}/delete")
+async def delete_terminal(
+    terminal_id: int,
+    request: Request,
+):
+    token = request.session.get("zk_token")
+
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Session expirée ou token manquant."
+        )
+
+    headers = {
+        "Authorization": f"Token {token}",
+        "Content-Type": "application/json",
+        "X-API-Key": "1234",
+    }
+
+    async with httpx.AsyncClient(timeout=30) as client:
+
+        response = await client.delete(
+            f"http://localhost/iclock/api/terminals/{terminal_id}/",
+            headers=headers,
+        )
+
+    if response.status_code not in (200, 204):
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=response.text,
+        )
+
+    return RedirectResponse(
+        url="/pointeurs",
+        status_code=303,
+    )
+       
+@app.post("/pointeurs/{terminal_id}/reboot")
+async def reboot_terminal(
+    terminal_id: int,
+    request: Request,
+):
+    token = request.session.get("zk_token")
+
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Session expirée ou token manquant."
+        )
+
+    headers = {
+        "Authorization": f"Token {token}",
+        "Content-Type": "application/json",
+        "X-API-Key": "1234",
+    }
+
+    payload = {
+        "terminals": [terminal_id]
+    }
+
+    async with httpx.AsyncClient(timeout=30) as client:
+
+        response = await client.post(
+            "http://localhost/iclock/api/terminals/reboot/",
+            headers=headers,
+            json=payload,
+        )
+
+    if response.status_code not in (200, 201, 202):
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=response.text,
+        )
+
+    return RedirectResponse(
+        url="/pointeurs",
+        status_code=303,
+    )
+    
+@app.post("/pointeurs/upload-all")
+async def upload_all_terminals(request: Request):
+
+    token = request.session.get("zk_token")
+
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Session expirée ou token manquant."
+        )
+
+    headers = {
+        "Authorization": f"Token {token}",
+        "Content-Type": "application/json",
+        "X-API-Key": "1234",
+    }
+
+    async with httpx.AsyncClient(timeout=30) as client:
+
+        # 1. Récupérer tous les terminaux
+        terminals_response = await client.get(
+            "http://localhost/iclock/api/terminals/",
+            headers=headers,
+        )
+
+        if terminals_response.status_code != 200:
+            raise HTTPException(
+                status_code=terminals_response.status_code,
+                detail=terminals_response.text,
+            )
+
+        terminals = terminals_response.json()
+
+        # 2. Récupérer uniquement les IDs
+        terminal_ids = [
+            terminal["id"]
+            for terminal in terminals.get("data", [])
+        ]
+
+        if not terminal_ids:
+            raise HTTPException(
+                status_code=400,
+                detail="Aucun terminal trouvé."
+            )
+
+        # 3. Préparer le payload
+        payload = {
+            "terminals": terminal_ids
+        }
+
+        # 4. Appeler Upload All
+        response = await client.post(
+            "http://localhost/iclock/api/terminals/upload_all/",
+            headers=headers,
+            json=payload,
+        )
+
+    if response.status_code not in (200, 201):
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=response.text,
+        )
+
+    return RedirectResponse(
+        url="/pointeurs",
+        status_code=303,
     )

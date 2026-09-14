@@ -10,83 +10,57 @@
     <div class="flex items-center gap-3">
 
         <!-- Recherche -->
-        <input
-            id="searchInput"
-            type="text"
-            placeholder="Rechercher un employé..."
-            class="w-72 rounded-lg border border-gray-300 px-4 py-2
+        <input id="searchInput" type="text" placeholder="Rechercher un employé..." class="w-72 rounded-lg border border-gray-300 px-4 py-2
                    focus:ring-2 focus:ring-blue-500 focus:outline-none">
-    
+
         <!-- Synchroniser sur les pointeurs -->
         <form method="POST" action="/employees/sync" id="syncForm">
 
-            <button
-                type="submit"
-                id="syncEmployeesBtn"
-                class="inline-flex items-center gap-2
+            <button type="submit" id="syncEmployeesBtn" class="inline-flex items-center gap-2
                        rounded-lg bg-emerald-600 px-4 py-2.5
                        text-sm font-semibold text-white
                        hover:bg-emerald-700
                        disabled:opacity-50
                        disabled:cursor-not-allowed
                        transition">
-        
-                <svg
-                    id="syncIcon"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke-width="2"
-                    stroke="currentColor"
-                    class="w-5 h-5">
-        
-                    <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        d="M4 4v5h5
+
+                <svg id="syncIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                    stroke="currentColor" class="w-5 h-5">
+
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5
                            M20 20v-5h-5
                            M19.07 8.93A8 8 0 0 0 5.34 6.34L4 9
                            M4.93 15.07A8 8 0 0 0 18.66 17.66L20 15" />
-        
+
                 </svg>
-        
+
                 <span id="syncText">
                     Synchroniser sur les pointeurs
                 </span>
-        
+
             </button>
-        
+
         </form>
-        
-    
+
+
         <!-- Créer -->
-        <a
-            href="/employees/create"
-            class="inline-flex items-center gap-2
+        <a href="/employees/create" class="inline-flex items-center gap-2
                    rounded-lg bg-blue-600 px-4 py-2.5
                    text-sm font-semibold text-white
                    hover:bg-blue-700 transition">
-    
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke-width="2"
-                stroke="currentColor"
-                class="w-5 h-5">
-    
-                <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="M12 4.5v15
+
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
+                stroke="currentColor" class="w-5 h-5">
+
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15
                        m7.5-7.5h-15" />
-    
+
             </svg>
-    
+
             Créer un employé
-    
+
         </a>
-    
+
     </div>
 
     <!-- Tableau -->
@@ -106,6 +80,10 @@
 
                     <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                         Poste
+                    </th>
+
+                    <th>
+                        Zones
                     </th>
 
                     <th class="px-6 py-4 text-center text-sm font-semibold text-gray-700">
@@ -148,6 +126,22 @@
                     <td class="px-6 py-4 text-gray-600">
                         {{ emp.position or "-" }}
                     </td>
+
+                    <td class="px-6 py-4">
+                        {% if emp.areas %}
+                        <div class="flex flex-wrap gap-1.5">
+                            {% for area in emp.areas %}
+                            <span
+                                class="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
+                                {{ area }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <span class="text-gray-400">-</span>
+                        {% endif %}
+                    </td>
+
 
                     <td class="px-3 py-3">
                         <div class="flex justify-center gap-2">
