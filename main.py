@@ -316,11 +316,81 @@ def employees_page(
             }
         )
 
+# async def get_next_position_code(client, headers):
+
+#     response = await client.get(
+#         "http://localhost/personnel/api/positions/",
+#         headers=headers,
+#     )
+
+#     if response.status_code != 200:
+#         raise HTTPException(
+#             status_code=response.status_code,
+#             detail=response.text,
+#         )
+
+#     data = response.json()
+
+#     # Selon la structure de ton API
+#     positions = data.get("data", data)
+
+#     codes = []
+
+#     for position in positions:
+#         try:
+#             code = int(position.get("position_code"))
+#             codes.append(code)
+#         except (TypeError, ValueError):
+#             pass
+
+#     next_code = max(codes, default=0) + 1
+
+#     return str(next_code)
+
+# async def get_next_position_code(client, headers):
+
+#     response = await client.get(
+#         "http://localhost/personnel/api/positions/",
+#         headers=headers,
+#     )
+
+#     if response.status_code != 200:
+#         raise HTTPException(
+#             status_code=response.status_code,
+#             detail=response.text,
+#         )
+
+#     data = response.json()
+
+#     # API paginée : {"data": [...]} ou {"results": [...]}
+#     if isinstance(data, dict):
+#         positions = (
+#             data.get("data")
+#             or data.get("results")
+#             or []
+#         )
+#     else:
+#         positions = data
+
+#     codes = []
+
+#     for position in positions:
+#         try:
+#             code = int(position.get("position_code"))
+#             codes.append(code)
+#         except (TypeError, ValueError):
+#             continue
+
+#     return str(max(codes, default=0) + 1)
+
 async def get_next_position_code(client, headers):
 
     response = await client.get(
         "http://localhost/personnel/api/positions/",
         headers=headers,
+        params={
+            "page_size": 1000
+        },
     )
 
     if response.status_code != 200:
@@ -331,8 +401,14 @@ async def get_next_position_code(client, headers):
 
     data = response.json()
 
-    # Selon la structure de ton API
-    positions = data.get("data", data)
+    if isinstance(data, dict):
+        positions = (
+            data.get("data")
+            or data.get("results")
+            or []
+        )
+    else:
+        positions = data
 
     codes = []
 
@@ -343,9 +419,7 @@ async def get_next_position_code(client, headers):
         except (TypeError, ValueError):
             pass
 
-    next_code = max(codes, default=0) + 1
-
-    return str(next_code)
+    return str(max(codes, default=0) + 1)
 
 @app.post("/employees/create")
 
@@ -660,13 +734,14 @@ async def update_employee(
         employee = employee_response.json()
 
         # ==========================================
-        # 2. Gérer la position
+        # Gérer la position
         # ==========================================
 
         current_position = employee.get("position")
 
         position_code = None
 
+        # Position actuelle
         if current_position:
             current_position_name = current_position.get("position_name")
             current_position_code = current_position.get("position_code")
@@ -674,23 +749,62 @@ async def update_employee(
             # La position n'a pas changé
             if position == current_position_name:
                 position_code = current_position_code
-
         # ==========================================
-        # 3. Si la position a changé
+        # Position modifiée
         # ==========================================
 
         if position_code is None:
 
-            # Récupérer le prochain position_code
+            # Récupérer les positions existantes
+            positions_response = await client.get(
+                "http://localhost/personnel/api/positions/",
+                headers=headers,
+            )
+
+            if positions_response.status_code != 200:
+                raise HTTPException(
+                    status_code=positions_response.status_code,
+                    detail=(
+                        "Erreur lors de la récupération des positions : "
+                        + positions_response.text
+                    ),
+                )
+
+            data = positions_response.json()
+
+            if isinstance(data, dict):
+                positions = (
+                    data.get("data")
+                    or data.get("results")
+                    or []
+                )
+            else:
+                positions = data
+
+            # Chercher une position existante
+            for pos in positions:
+
+                if (
+                    pos.get("position_name", "").strip().lower()
+                    == position.strip().lower()
+                ):
+                    position_code = pos.get("position_code")
+                    break
+
+        # ==========================================
+        # Position inexistante → créer
+        # ==========================================
+
+        if position_code is None:
+
             position_code = await get_next_position_code(
                 client,
                 headers
             )
 
-            # Créer la nouvelle position
             payload_position = {
                 "position_code": position_code,
-                "position_name": position,
+                "position_name": position.strip(),
             }
 
             position_response = await client.post(
@@ -700,6 +814,7 @@ async def update_employee(
             )
 
             if position_response.status_code not in (200, 201):
+
                 raise HTTPException(
                     status_code=position_response.status_code,
                     detail=(
@@ -707,6 +822,11 @@ async def update_employee(
                         + position_response.text
                     ),
                 )
+
+            position_data = position_response.json()
+
+            position_code = position_data["position_code"]
+
 
             # Utiliser le code retourné par l'API
             position_data = position_response.json()
