@@ -60,8 +60,8 @@
                text-sm focus:border-indigo-500 focus:ring-2
                focus:ring-indigo-500/20 outline-none">
                 {% for a in area.data %}
-                <option value="{{ a.area_code }}" {% if a.id in employee_area_ids %}selected{% endif %}>
-                    {{ a.area_code }} - {{ a.area_name }}
+                <option value="{{ a.id }}" {% if a.id in employee_area_ids %}selected{% endif %}>
+                    {{ a.id }} - {{ a.area_name }}
                 </option>
                 {% endfor %}
             </select>

@@ -328,7 +328,7 @@
 
                 </a>
 
-                <form method="POST" action="/pointeurs/{{ terminal.id }}/reboot">
+                <form method="POST"  onsubmit="return confirm('Voulez-vous redémarrer ce pointeur ?');" action="/pointeurs/{{ terminal.id }}/reboot">
 
                     <button type="submit" class="inline-flex items-center gap-2
                            px-3 py-2 rounded-lg

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Employé{% endblock %}
+
+{% block content %}
+
+<div class="max-w-2xl mx-auto p-6">
+
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">
+            Nouvelle zone
+        </h1>
+
+        <p class="text-sm text-gray-500 mt-1">
+            Ajouter une nouvelle zone
+        </p>
+    </div>
+
+
+    <form
+        method="POST"
+        action="/areas/create"
+        class="bg-white rounded-xl shadow-sm border p-6 space-y-5"
+    >
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                Code
+            </label>
+
+            <input
+                type="text"
+                name="area_code"
+                required
+                class="w-full rounded-lg border border-gray-300 bg-white
+                       focus:border-blue-500 focus:ring-blue-500"
+            >
+        </div>
+
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                Nom
+            </label>
+
+            <input
+                type="text"
+                name="area_name"
+                required
+                class="w-full rounded-lg border border-gray-300 bg-white
+                       focus:border-blue-500 focus:ring-blue-500"
+            >
+        </div>
+
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+                Zone parente
+            </label>
+
+            <select
+                name="parent_area"
+                class="w-full rounded-lg border border-gray-300 bg-white
+                       focus:border-blue-500 focus:ring-blue-500"
+            >
+
+                <option value="">
+                    Aucune
+                </option>
+
+                {% for area in areas %}
+
+                <option value="{{ area.id }}">
+                    {{ area.area_name }}
+                </option>
+
+                {% endfor %}
+
+            </select>
+        </div>
+
+
+        <div class="flex justify-end gap-3 pt-4">
+
+            <a
+                href="/zones"
+                class="px-4 py-2 border rounded-lg
+                       text-gray-700 hover:bg-gray-50"
+            >
+                Annuler
+            </a>
+
+            <button
+                type="submit"
+                class="px-4 py-2 bg-blue-600
+                       text-white rounded-lg
+                       hover:bg-blue-700"
+            >
+                Créer
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+
+
+{% endblock %}

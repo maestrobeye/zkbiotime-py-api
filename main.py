@@ -27,6 +27,8 @@ from typing import Annotated
 import asyncio
 import httpx
 
+from openpyxl.styles import PatternFill
+
 app = FastAPI(
     title="ZKBioTime RH"
 )
@@ -500,6 +502,7 @@ async def create_employee(
             )
 
         position_data = position_response.json()
+        
         # ==========================================
         # 2. Créer l'employé
         # ==========================================
@@ -630,60 +633,6 @@ async def edit_employee_page(
             "employee_area_ids": employee_area_ids,
         },
     )
-
-# @app.post("/employees/edit/{employee_id}")
-# async def update_employee(
-#     request: Request,
-#     employee_id: int,
-
-#     emp_code: Annotated[str, Form()],
-#     area: Annotated[list[int], Form()],
-#     card_no: Annotated[int, Form()],
-#     position: Annotated[str, Form()],
-
-#     first_name: Annotated[str | None, Form()] = None,
-#     last_name: Annotated[str | None, Form()] = None,
-#     mobile: Annotated[str | None, Form()] = None,
-#     email: Annotated[str | None, Form()] = None,
-# ):
-#     token = request.session["zk_token"]
-
-#     headers = {
-#         "Authorization": f"Token {token}",
-#         "Content-Type": "application/json",
-#         "X-API-Key": "1234",
-#     }
-
-#     payload = {
-#         "emp_code": emp_code,
-#         "department": 1,
-#         "area": area,
-#         "card_no": card_no,
-#         "position": position,
-#         "first_name": first_name,
-#         "last_name": last_name,
-#         "mobile": mobile,
-#         "email": email,
-#     }
-
-#     async with httpx.AsyncClient(timeout=30) as client:
-
-#         response = await client.put(
-#             f"http://localhost/personnel/api/employees/{employee_id}/",
-#             json=payload,
-#             headers=headers,
-#         )
-
-#     if response.status_code not in (200, 201):
-#         raise HTTPException(
-#             status_code=response.status_code,
-#             detail=response.text,
-#         )
-
-#     return RedirectResponse(
-#         url="/employees",
-#         status_code=303,
-#     )
 
 @app.post("/employees/edit/{employee_id}")
 async def update_employee(
@@ -1050,7 +999,45 @@ async def sync_employees(request: Request):
                 status_code=adjust_response.status_code,
                 detail=adjust_response.text,
             )
+        conn=get_conn()    
+        try:
+                with conn.cursor() as cur:
 
+                    for employee in employees:
+
+                        employee_id = employee
+
+                        cur.execute(
+                            """
+                            DELETE FROM personnel_employee_area
+                            WHERE employee_id = %s
+                            """,
+                            (employee_id,)
+                        )
+
+                        for area_id in areas:
+
+                            cur.execute(
+                                """
+                                INSERT INTO personnel_employee_area
+                                    (employee_id, area_id)
+                                VALUES
+                                    (%s, %s)
+                                """,
+                                (employee_id, area_id)
+                            )
+
+                conn.commit()
+
+        except Exception as exc:
+            conn.rollback()
+
+            raise HTTPException(
+                status_code=500,
+                detail=f"Erreur lors de la mise à jour des zones : {exc}"
+            )
+
+        print("Response Adjust Area: ",adjust_response.text)
         # --------------------------------------------------
         # 3. Resynchroniser les employés sur les terminaux
         # --------------------------------------------------
@@ -1156,66 +1143,6 @@ async def attendance_page(
             "end_date": end_date,
         },
     )
-# -----------------------------
-# EXPORT EXCEL
-# -----------------------------
-
-# @app.get(
-#     "/attendance/export"
-# )
-# async def export_excel(
-#     request:Request
-# ):
-
-#     if not check_login(request):
-#         return RedirectResponse("/login")
-
-#     conn=get_conn()
-
-#     df= pd.read_sql(
-#         """
-#         SELECT
-#             e.emp_code,
-#             e.first_name,
-#             e.last_name,
-#             a.att_date,
-#             a.clock_in,
-#             a.clock_out
-
-#         FROM att_payloadtimecard a
-
-#         JOIN personnel_employee e
-#         ON e.id=a.emp_id
-#         """,
-#         conn
-#     )
-
-#     conn.close()
-
-#     output=io.BytesIO()
-
-#     with pd.ExcelWriter(
-#         output,
-#         engine="openpyxl"
-#     ) as writer:
-
-#         df.to_excel(
-#             writer,
-#             index=False,
-#             sheet_name="Pointages"
-#         )
-
-#     output.seek(0)
-
-#     return StreamingResponse(
-#         output,
-#         media_type=
-#         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-#         headers={
-#             "Content-Disposition":
-#             "attachment; filename=pointages.xlsx"
-#         }
-#     )
 
 @app.get("/attendance/export")
 async def attendance_export(
@@ -1260,9 +1187,23 @@ async def attendance_export(
     data = response.json()
 
     records = data.get("data", [])
+    
+    selected_records = []
+
+    for record in records:
+        selected_records.append({
+            "Code employé": record.get("emp_code"),
+            "Prénom": record.get("first_name"),
+            "Nom": record.get("last_name"),
+            "Date": record.get("att_date"),
+            "Entrée": record.get("clock_in"),
+            "Sortie": record.get("clock_out"),
+            "Durée": record.get("total_hrs"),
+            "Statut":get_attendance_status(record),
+        })
 
     # Transformer en DataFrame
-    df = pd.DataFrame(records)
+    df = pd.DataFrame(selected_records)
 
     # Supprimer les timezones des colonnes datetime
     for col in df.select_dtypes(include=["datetimetz"]).columns:
@@ -1277,7 +1218,30 @@ async def attendance_export(
             index=False,
             sheet_name="Attendance"
         )
+        
+        worksheet = writer.sheets["Attendance"]
 
+        green_fill = PatternFill(
+            fill_type="solid",
+            fgColor="00B050"
+        )
+
+        red_fill = PatternFill(
+            fill_type="solid",
+            fgColor="FF0000"
+        )
+
+        # Trouver la colonne "Statut"
+        statut_col = df.columns.get_loc("Statut") + 1
+
+        for row in range(2, worksheet.max_row + 1):
+            cell = worksheet.cell(row=row, column=statut_col)
+
+            if cell.value == "Présent":
+                cell.fill = green_fill
+
+            elif cell.value == "Absent":
+                cell.fill = red_fill
     output.seek(0)
 
     filename = (
@@ -1285,8 +1249,7 @@ async def attendance_export(
         f"{end_date.isoformat()}.xlsx"
     )
 
-    print(len(employee_ids))
-    print(len(records))
+    print(records)
 
     return StreamingResponse(
         output,
@@ -1298,6 +1261,15 @@ async def attendance_export(
             "Content-Disposition": f'attachment; filename="{filename}"'
         },
     )
+
+def get_attendance_status(record):
+    check_in = record.get("clock_in")
+    check_out = record.get("clock_out")
+
+    if check_in and check_out:
+        return "Présent"
+
+    return "Absent"
 
 def to_utc(dt):
     if dt is None:
@@ -1610,4 +1582,211 @@ async def upload_all_terminals(request: Request):
     return RedirectResponse(
         url="/pointeurs",
         status_code=303,
+    )
+
+
+@app.get("/zones")
+async def areas_page(
+    request: Request
+):
+    token = request.session["zk_token"]
+
+    headers = {
+        "Authorization": f"Token {token}",
+        "Content-Type": "application/json",
+        "X-API-Key": "1234",
+    }
+
+    PAGE_SIZE = 1000
+
+    async with httpx.AsyncClient(timeout=30) as client:
+
+        response = await client.get(
+            "http://localhost/personnel/api/areas/",
+            headers=headers
+        )
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=response.text,
+            )
+
+        data = response.json()
+
+    # API paginée
+    if isinstance(data, dict):
+        areas = data.get("data") or data.get("results") or []
+        total = data.get("count", len(areas))
+    else:
+        areas = data
+        total = len(areas)
+
+    total_pages = (total + PAGE_SIZE - 1) // PAGE_SIZE
+    return templates.TemplateResponse(
+        name="zones.html",
+        request=request,
+       context= {
+            "areas": areas,
+            "total_pages": total_pages,
+        },
+    )
+@app.get("/areas/create")
+async def create_area_page(request: Request):
+
+    token = request.session["zk_token"]
+
+    headers = {
+        "Authorization": f"Token {token}",
+        "X-API-Key": "1234",
+    }
+
+    async with httpx.AsyncClient(timeout=30) as client:
+
+        response = await client.get(
+            "http://localhost/personnel/api/areas/",
+            headers=headers,
+            params={
+                "page_size": 1000,
+            },
+        )
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=response.text,
+            )
+
+        data = response.json()
+
+    if isinstance(data, dict):
+        areas = data.get("data") or data.get("results") or []
+    else:
+        areas = data
+
+    return templates.TemplateResponse(
+        name="zones_create.html",
+        request= request,
+        context={
+            "areas": areas,
+        },
+    )
+
+@app.post("/areas/create")
+async def create_area(
+    request: Request,
+    area_code: Annotated[str, Form()],
+    area_name: Annotated[str, Form()],
+    parent_area: Annotated[int | None, Form()] = None,
+):
+    token = request.session["zk_token"]
+
+    headers = {
+        "Authorization": f"Token {token}",
+        "Content-Type": "application/json",
+        "X-API-Key": "1234",
+    }
+
+    payload = {
+        "area_code": area_code,
+        "area_name": area_name,
+        "parent_area": parent_area,
+    }
+
+    async with httpx.AsyncClient(timeout=30) as client:
+
+        response = await client.post(
+            "http://localhost/personnel/api/areas/",
+            json=payload,
+            headers=headers,
+        )
+
+        if response.status_code not in (200, 201):
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=response.text,
+            )
+
+    return RedirectResponse(
+        url="/zones",
+        status_code=303,
+    )
+
+@app.get("/zones/edit/{area_id}")
+async def edit_area_page(
+    request: Request,
+    area_id: int,
+):
+    token = request.session["zk_token"]
+
+    headers = {
+        "Authorization": f"Token {token}",
+        "X-API-Key": "1234",
+    }
+
+    area_url = (
+        f"http://localhost/personnel/api/areas/{area_id}/"
+    )
+
+    async with httpx.AsyncClient(timeout=30) as client:
+
+        # ==========================================
+        # Récupérer la zone à modifier
+        # ==========================================
+
+        area_response = await client.get(
+            area_url,
+            headers=headers,
+        )
+
+        if area_response.status_code != 200:
+            raise HTTPException(
+                status_code=area_response.status_code,
+                detail=(
+                    "Erreur lors de la récupération de la zone : "
+                    + area_response.text
+                ),
+            )
+
+        area = area_response.json()
+
+        # ==========================================
+        # Récupérer les zones pour le parent
+        # ==========================================
+
+        areas_response = await client.get(
+            "http://localhost/personnel/api/areas/",
+            headers=headers,
+            params={
+                "page_size": 1000,
+            },
+        )
+
+        if areas_response.status_code != 200:
+            raise HTTPException(
+                status_code=areas_response.status_code,
+                detail=(
+                    "Erreur lors de la récupération des zones : "
+                    + areas_response.text
+                ),
+            )
+
+        data = areas_response.json()
+
+        if isinstance(data, dict):
+            areas = (
+                data.get("data")
+                or data.get("results")
+                or []
+            )
+        else:
+            areas = data
+
+    return templates.TemplateResponse(
+        name="zones_edit.html",
+        request=request,
+        context={
+            "area": area,
+            "areas": areas,
+        },
     )
