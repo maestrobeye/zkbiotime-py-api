@@ -90,7 +90,9 @@ def login_page(request: Request):
     return templates.TemplateResponse(
         request=request,
         name="login.html",
-        context={}
+        context={
+            "request": request
+        }
     )
 
 ZK_LOGIN_URL = "http://localhost/api-token-auth/"
@@ -121,8 +123,9 @@ def login(
 
     if response.status_code != 200:
         return templates.TemplateResponse(
-            "login.html",
-            {
+            name="login.html",
+            request=request,
+            context={
                 "request": request,
                 "error": "Identifiants incorrects"
             }
@@ -139,8 +142,9 @@ def login(
 
     if not token:
         return templates.TemplateResponse(
-            "login.html",
-            {
+            name="login.html",
+            request=request,
+            context={
                 "request": request,
                 "error": "Token absent"
             }
