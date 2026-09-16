@@ -110,9 +110,12 @@
                                            focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
                                            outline-none">
                             {% for area in areas %}
-                            <option value="{{ area.id or ''}}">
+
+                            <option value="{{ area.id }}" {% if terminal.area.id==area.id %} selected {% endif %}>
+
                                 {{ area.area_name }}
                             </option>
+
                             {% endfor %}
                         </select>
                     </div>

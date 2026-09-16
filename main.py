@@ -245,7 +245,6 @@ async def dashboard(request: Request):
         name="dashboard.html",
         context={
             "employees": employees,
-            "today": today,
             "punches": data.get("data", []),
             "online_devices": online_devices
         }
@@ -1401,9 +1400,8 @@ async def edit_terminal_form(
            headers=headers)
         )
     
-
-
     areas = areasList.json()
+    
     if responseTerminal.status_code != 200:
         raise HTTPException(
             status_code=responseTerminal.status_code,
@@ -1411,7 +1409,7 @@ async def edit_terminal_form(
         )
 
     terminal = responseTerminal.json()
-    print(terminal)
+    
     return templates.TemplateResponse(
         request=request,
         name="terminal_edit.html",
