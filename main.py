@@ -216,19 +216,38 @@ async def dashboard(request: Request):
                 "X-API-Key": "1234",
             },
         )
+    
+    async with httpx.AsyncClient(timeout=30) as client:
+        responseTerminals = await client.get(
+            "http://localhost/iclock/api/terminals/",
+            headers={
+                "Authorization": f"Token {request.session['zk_token']}",
+                "X-API-Key": "1234",
+            },
+        )
 
     if response.status_code != 200:
         raise HTTPException(response.status_code, response.text)
 
     data = response.json()
+    
+    terminals_response = responseTerminals.json()
 
+    terminals = terminals_response.get("data", [])
+
+    online_devices = sum(
+        1
+        for terminal in terminals
+        if terminal.get("state") == "1"
+    )
     return templates.TemplateResponse(
         request=request,
         name="dashboard.html",
         context={
             "employees": employees,
             "today": today,
-            "punches": data.get("data", [])
+            "punches": data.get("data", []),
+            "online_devices": online_devices
         }
     )
 
@@ -1234,9 +1253,17 @@ async def attendance_export(
             fill_type="solid",
             fgColor="FF0000"
         )
+        
+        yellow_fill = PatternFill(
+            fill_type="solid",
+            fgColor="FFD966"
+        )
+
 
         # Trouver la colonne "Statut"
         statut_col = df.columns.get_loc("Statut") + 1
+
+        duree_col = df.columns.get_loc("Durée") + 1
 
         for row in range(2, worksheet.max_row + 1):
             cell = worksheet.cell(row=row, column=statut_col)
@@ -1246,6 +1273,29 @@ async def attendance_export(
 
             elif cell.value == "Absent":
                 cell.fill = red_fill
+            # -------------------------
+            # Couleur de la durée
+            # -------------------------
+            duree_cell = worksheet.cell(
+                row=row,
+                column=duree_col
+            )
+
+            duree = duree_cell.value
+
+            if duree:
+                try:
+                    heures, minutes = map(int, str(duree).split(":"))
+
+                    total_minutes = heures * 60 + minutes
+
+                    if total_minutes >= 8 * 60:
+                        duree_cell.fill = green_fill
+                    else:
+                        duree_cell.fill = yellow_fill
+
+                except (ValueError, AttributeError):
+                    pass
     output.seek(0)
 
     filename = (
