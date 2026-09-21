@@ -340,73 +340,6 @@ def employees_page(
             }
         )
 
-# async def get_next_position_code(client, headers):
-
-#     response = await client.get(
-#         "http://localhost/personnel/api/positions/",
-#         headers=headers,
-#     )
-
-#     if response.status_code != 200:
-#         raise HTTPException(
-#             status_code=response.status_code,
-#             detail=response.text,
-#         )
-
-#     data = response.json()
-
-#     # Selon la structure de ton API
-#     positions = data.get("data", data)
-
-#     codes = []
-
-#     for position in positions:
-#         try:
-#             code = int(position.get("position_code"))
-#             codes.append(code)
-#         except (TypeError, ValueError):
-#             pass
-
-#     next_code = max(codes, default=0) + 1
-
-#     return str(next_code)
-
-# async def get_next_position_code(client, headers):
-
-#     response = await client.get(
-#         "http://localhost/personnel/api/positions/",
-#         headers=headers,
-#     )
-
-#     if response.status_code != 200:
-#         raise HTTPException(
-#             status_code=response.status_code,
-#             detail=response.text,
-#         )
-
-#     data = response.json()
-
-#     # API paginée : {"data": [...]} ou {"results": [...]}
-#     if isinstance(data, dict):
-#         positions = (
-#             data.get("data")
-#             or data.get("results")
-#             or []
-#         )
-#     else:
-#         positions = data
-
-#     codes = []
-
-#     for position in positions:
-#         try:
-#             code = int(position.get("position_code"))
-#             codes.append(code)
-#         except (TypeError, ValueError):
-#             continue
-
-#     return str(max(codes, default=0) + 1)
-
 async def get_next_position_code(client, headers):
 
     response = await client.get(
@@ -866,41 +799,107 @@ async def update_employee(
 )
 async def employee_profile(
     request: Request,
-    emp_id:int
+    emp_id:int,
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
+    page: int = Query(1, ge=1),
 ):
     if not check_login(request):
         return RedirectResponse("/login")
  
     token = request.session["zk_token"]
+   
+    # Dates par défaut : année en cours
+    today = date.today()
 
+    if start_date is None:
+        start_date = date(today.year, 1, 1)
+
+    if end_date is None:
+        end_date = date(today.year, 12, 31)
+        
     headers = {
         "Authorization": f"Token {token}",
         "Content-Type": "application/json",
         "X-API-Key": "1234",
     }
-
     async with httpx.AsyncClient(timeout=30) as client:
 
-        response = await client.get(
+        employee_task = client.get(
             f"http://localhost/personnel/api/employees/{emp_id}/",
             headers=headers,
         )
-        
-    if response.status_code != 200:
-        raise HTTPException(
-            status_code=response.status_code,
-            detail=response.text,
+        page_size = 20
+        attendance_task = client.get(
+            ATT_API_URL,
+            params={
+                "employees": [emp_id],
+                "query": 32,
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "page": page,
+                "page_size": page_size,
+                "departments": -1,
+                "groups": -1,
+            },
+            headers=headers,
         )
 
-    return templates.TemplateResponse(
-    request=request,
-    name="employee.html",
-    context={
-        "request": request,
-        "employee": response.json()
-    },
-)
+        employee_response, attendance_response = await asyncio.gather(
+            employee_task,
+            attendance_task,
+        )
 
+        if employee_response.status_code != 200:
+            raise HTTPException(
+                status_code=employee_response.status_code,
+                detail=employee_response.text,
+            )
+
+        if attendance_response.status_code != 200:
+            raise HTTPException(
+                status_code=attendance_response.status_code,
+                detail=attendance_response.text,
+            )
+
+    employee = employee_response.json()
+    attendance = attendance_response.json()
+
+    records = attendance.get("data", [])
+    total_records = attendance.get("count", 0)
+
+    # -----------------------------
+    # Pagination
+    # -----------------------------
+
+    total_pages = (total_records + page_size - 1) // page_size
+
+    has_previous = page > 1
+    has_next = page < total_pages
+
+    return templates.TemplateResponse(
+        request=request,
+        name="employee.html",
+        context={
+            "request": request,
+            "employee": employee,
+
+            # Pointages
+            "records": records,
+            "total_records": total_records,
+
+            # Pagination
+            "page": page,
+            "page_size": page_size,
+            "total_pages": total_pages,
+            "has_previous": has_previous,
+            "has_next": has_next,
+
+            # Filtres
+            "start_date": start_date,
+            "end_date": end_date,
+        }
+    )
 # -----------------------------
 # POINTAGES
 # -----------------------------

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Employés{% endblock %}
+{% block title %}Agents{% endblock %}
 
 {% block content %}
 
@@ -10,7 +10,7 @@
     <div class="flex items-center gap-3">
 
         <!-- Recherche -->
-        <input id="searchInput" type="text" placeholder="Rechercher un employé..." class="w-72 rounded-lg border border-gray-300 px-4 py-2
+        <input id="searchInput" type="text" placeholder="Rechercher un agent..." class="w-72 rounded-lg border border-gray-300 px-4 py-2
                    focus:ring-2 focus:ring-blue-500 focus:outline-none">
 
         <!-- Synchroniser sur les pointeurs -->
@@ -57,7 +57,7 @@
 
             </svg>
 
-            Créer un employé
+            Ajouter un agent
 
         </a>
 
@@ -156,7 +156,7 @@
                 {% else %}
                 <tr>
                     <td colspan="5" class="text-center py-12 text-gray-500">
-                        Aucun employé trouvé.
+                        Aucun agent trouvé.
                     </td>
                 </tr>
                 {% endfor %}
@@ -166,7 +166,7 @@
         <div class="flex items-center justify-between px-6 py-4 border-t">
 
             <p class="text-sm text-gray-600">
-                {{ total }} employés
+                {{ total }} agents
             </p>
 
             <div class="flex gap-2">

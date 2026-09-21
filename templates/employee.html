@@ -7,45 +7,31 @@
 <div class="space-y-8">
 
     <!-- Header -->
-    <!-- Header -->
-    <div class="flex items-center justify-between">
+    <!-- Carte employé -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
 
-        <div class="flex items-center gap-4">
+        <!-- Barre d'actions -->
+        <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
 
-            <!-- Retour -->
-            <a href="/employees" class="p-2 rounded-lg hover:bg-gray-100 text-gray-600">
+            <!-- Retour + identité -->
+            <div class="flex items-center gap-3 min-w-0">
 
-                ←
+                <a href="/employees" class="flex-shrink-0 w-9 h-9 flex items-center justify-center
+                      rounded-lg hover:bg-gray-100 text-gray-600 transition" title="Retour aux employés">
 
-            </a>
+                    ←
 
-            <!-- Informations employé -->
-            <div>
-
-                <h3 class="text-3xl font-bold text-gray-800">
-                    {{ employee.first_name }}
-                    {{ employee.last_name }}
-                </h3>
-
-                <p class="text-gray-500">
-                    CARTE RFID : {{ employee.card_no or 'NON RENSEIGNE'}}
-                </p>
-
+                </a>
             </div>
 
-        </div>
-
-        <!-- Actions -->
-        <div class="flex items-center gap-3">
-
+            <!-- Modifier -->
             <a href="/employees/edit/{{ employee.id }}" class="inline-flex items-center gap-2
                   bg-indigo-600 text-white
-                  px-4 py-2.5 rounded-lg
+                  px-3 py-2 rounded-lg
                   text-sm font-medium
                   hover:bg-indigo-700
-                  transition">
+                  transition flex-shrink-0">
 
-                <!-- Icône modifier -->
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
 
@@ -60,13 +46,8 @@
 
         </div>
 
-    </div>
 
-
-    <!-- Carte employé -->
-    <!-- Carte employé -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-
+        <!-- Informations -->
         <div class="p-5">
 
             <div class="flex items-center gap-5">
@@ -81,7 +62,7 @@
                 </div>
 
                 <!-- Informations -->
-                <div class="flex-1">
+                <div class="flex-1 min-w-0">
 
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
 
@@ -130,12 +111,13 @@
                             </p>
                         </div>
 
+                        <!-- Téléphone -->
                         <div>
                             <p class="text-xs font-medium text-gray-500 uppercase">
                                 Téléphone
                             </p>
 
-                            <p class="mt-1 text-sm text-gray-700 truncate" title="{{ employee.email or '' }}">
+                            <p class="mt-1 text-sm text-gray-700 truncate" title="{{ employee.mobile or '' }}">
                                 {{ employee.mobile or "-" }}
                             </p>
                         </div>
@@ -145,6 +127,7 @@
                 </div>
 
             </div>
+
 
             <!-- Zones -->
             {% if employee.area %}
@@ -160,9 +143,9 @@
                     {% for a in employee.area %}
 
                     <span class="inline-flex items-center
-                                 px-2.5 py-1 rounded-full
-                                 bg-indigo-50 text-indigo-700
-                                 text-xs font-medium">
+                             px-2.5 py-1 rounded-full
+                             bg-indigo-50 text-indigo-700
+                             text-xs font-medium">
 
                         {{ a.area_name }}
 
@@ -180,105 +163,204 @@
 
     </div>
 
+
     <!-- Historique -->
 
     <div class="bg-white rounded-xl shadow">
 
-        <div class="border-b p-6 flex justify-between items-center">
+        <div class="bg-white rounded-xl shadow">
 
-            <h2 class="text-xl font-semibold">
+            <div class="border-b p-6">
 
-                Historique des pointages
+                <div class="flex flex-col md:flex-row
+                            md:items-center md:justify-between gap-4">
 
-            </h2>
+                    <div>
+                        <h2 class="text-xl font-semibold">
+                            Historique des pointages
+                        </h2>
 
-            <a href="/attendance/export?emp={{ employee.id }}"
-                class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                        <p class="text-sm text-gray-500 mt-1">
+                            {{ total_records }} pointages
+                        </p>
+                    </div>
 
-                Export Excel
+                    <a href="/attendance/export?emp={{ employee.id }}" class="bg-green-600 text-white px-4 py-2 rounded-lg
+                              hover:bg-green-700">
+                        Export Excel
+                    </a>
 
-            </a>
+                </div>
 
-        </div>
 
-        <div class="overflow-x-auto">
+                <!-- Filtre dates -->
 
-            <table class="min-w-full">
+                <form method="get" action="/employee/{{ employee.id }}" class="mt-5 flex flex-col sm:flex-row gap-3">
 
-                <thead class="bg-gray-100">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">
+                            Du
+                        </label>
 
-                    <tr>
+                        <input type="date" name="start_date" value="{{ start_date }}"
+                            class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
 
-                        <th class="px-6 py-3 text-left">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">
+                            Au
+                        </label>
 
-                            Date
+                        <input type="date" name="end_date" value="{{ end_date }}"
+                            class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                    </div>
 
-                        </th>
+                    <div class="flex items-end">
 
-                        <th class="px-6 py-3 text-left">
+                        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg
+                                   text-sm hover:bg-indigo-700">
+                            Filtrer
+                        </button>
 
-                            Arrivée
+                    </div>
 
-                        </th>
+                </form>
 
-                        <th class="px-6 py-3 text-left">
+            </div>
 
-                            Départ
 
-                        </th>
+            <div class="overflow-x-auto">
 
-                    </tr>
+                <table class="min-w-full">
 
-                </thead>
+                    <thead class="bg-gray-100">
 
-                <tbody>
+                        <tr>
 
-                    {% for row in records %}
+                            <th class="px-6 py-3 text-left">
 
-                    <tr class="border-b hover:bg-gray-50">
+                                Date
 
-                        <td class="px-6 py-4">
+                            </th>
 
-                            {{ row.att_date }}
+                            <th class="px-6 py-3 text-left">
 
-                        </td>
+                                Arrivée
 
-                        <td class="px-6 py-4 font-mono">
+                            </th>
 
-                            {{ row.clock_in or "-" }}
+                            <th class="px-6 py-3 text-left">
 
-                        </td>
+                                Départ
 
-                        <td class="px-6 py-4 font-mono">
+                            </th>
 
-                            {{ row.clock_out or "-" }}
+                            <th class="px-6 py-3 text-left">
 
-                        </td>
+                                Total
 
-                    </tr>
+                            </th>
+                        </tr>
 
-                    {% else %}
+                    </thead>
 
-                    <tr>
+                    <tbody>
 
-                        <td colspan="3" class="py-10 text-center text-gray-500">
+                        {% for row in records %}
 
-                            Aucun pointage disponible.
+                        <tr class="border-b hover:bg-gray-50">
 
-                        </td>
+                            <td class="px-6 py-4">
 
-                    </tr>
+                                {{ row.att_date }}
 
-                    {% endfor %}
+                            </td>
 
-                </tbody>
+                            <td class="px-6 py-4 font-mono">
 
-            </table>
+                                {{ row.clock_in or "-" }}
+
+                            </td>
+
+                            <td class="px-6 py-4 font-mono">
+
+                                {{ row.clock_out or "-" }}
+
+                            </td>
+
+                            <td class="px-6 py-4 font-mono">
+
+                                {{ row.total_hrs or "-" }}
+
+                            </td>
+
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+
+                            <td colspan="3" class="py-10 text-center text-gray-500">
+
+                                Aucun pointage disponible.
+
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+                <!-- Pagination -->
+                {% if total_pages > 1 %}
+
+                <div class="border-t border-gray-100 px-6 py-4 flex items-center justify-between">
+
+                    <!-- Informations -->
+                    <p class="text-sm text-gray-500">
+                        Page {{ page }} sur {{ total_pages }}
+                        · {{ total_records }} pointages
+                    </p>
+
+                    <!-- Navigation -->
+                    <div class="flex items-center gap-2">
+
+                        {% if has_previous %}
+
+                        <a href="/employee/{{ employee.id }}?page={{ page - 1 }}&start_date={{ start_date }}&end_date={{ end_date }}"
+                            class="px-3 py-2 border border-gray-200 rounded-lg
+                  text-sm text-gray-700
+                  hover:bg-gray-50">
+                            ← Précédent
+                        </a>
+
+                        {% endif %}
+
+
+                        {% if has_next %}
+
+                        <a href="/employee/{{ employee.id }}?page={{ page + 1 }}&start_date={{ start_date }}&end_date={{ end_date }}"
+                            class="px-3 py-2 border border-gray-200 rounded-lg
+                  text-sm text-gray-700
+                  hover:bg-gray-50">
+                            Suivant →
+                        </a>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+                {% endif %}
+
+
+            </div>
 
         </div>
 
     </div>
 
-</div>
-
-{% endblock %}
+    {% endblock %}
