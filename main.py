@@ -391,7 +391,6 @@ async def create_employee(
     mobile: Annotated[str | None, Form()] = None,
     email: Annotated[str | None, Form()] = None,
 ):
-    url = f"http://localhost/personnel/api/employees/"
 
     # Supprimer les champs None
     payload = {
@@ -414,7 +413,7 @@ async def create_employee(
 
     if email:
         payload["email"] = email
-
+    
     token = request.session["zk_token"]
 
     headers = {
@@ -604,7 +603,7 @@ async def update_employee(
     email: Annotated[str | None, Form()] = None,
 ):
     token = request.session["zk_token"]
-
+    print(emp_code)
     headers = {
         "Authorization": f"Token {token}",
         "Content-Type": "application/json",
@@ -748,7 +747,7 @@ async def update_employee(
             "card_no": card_no,
             "position": position_code,
         }
-
+        print(payload)
         if first_name:
             payload["first_name"] = first_name
 
