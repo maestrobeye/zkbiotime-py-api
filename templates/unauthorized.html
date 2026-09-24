@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Accès non autorisé{% endblock %}
+
+{% block content %}
+
+<div class="min-h-[70vh] flex items-center justify-center px-4">
+<div class="w-full max-w-lg">
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+
+        <!-- Header / Icon -->
+        <div class="px-6 pt-8 pb-6 text-center">
+
+            <div class="mx-auto w-20 h-20 rounded-full
+                        bg-red-50 text-red-600
+                        flex items-center justify-center">
+
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke-width="1.8"
+                     stroke="currentColor"
+                     class="w-10 h-10">
+
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M12 9v4m0 4h.01
+                             M10.3 3.6 2.9 18a2 2 0 0 0 1.8 3h14.6
+                             a2 2 0 0 0 1.8-3L13.7 3.6
+                             a2 2 0 0 0-3.4 0Z" />
+
+                </svg>
+
+            </div>
+
+            <!-- Code erreur -->
+            <p class="mt-6 text-6xl font-bold text-gray-800">
+                403
+            </p>
+
+            <h1 class="mt-3 text-2xl font-bold text-gray-800">
+                Accès non autorisé
+            </h1>
+
+            <p class="mt-3 text-gray-500 leading-relaxed">
+                Vous n'avez pas les permissions nécessaires pour
+                accéder à cette page.
+            </p>
+
+        </div>
+
+
+        <!-- Information -->
+        <div class="mx-6 mb-6 px-4 py-3 rounded-lg
+                    bg-amber-50 border border-amber-100">
+
+            <div class="flex items-start gap-3">
+
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke-width="1.8"
+                     stroke="currentColor"
+                     class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5">
+
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M12 9v4m0 4h.01
+                             M10.3 3.6 2.9 18a2 2 0 0 0 1.8 3h14.6
+                             a2 2 0 0 0 1.8-3L13.7 3.6
+                             a2 2 0 0 0-3.4 0Z" />
+
+                </svg>
+
+                <p class="text-sm text-amber-800">
+                    Si vous pensez que cet accès devrait vous être
+                    accordé, veuillez contacter votre administrateur.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- Footer -->
+        <div class="px-6 py-4 bg-gray-50 border-t border-gray-100
+                    flex flex-col sm:flex-row items-center
+                    justify-center gap-3">
+
+            <a href="/"
+               class="w-full sm:w-auto inline-flex items-center
+                      justify-center gap-2
+                      px-4 py-2.5 rounded-lg
+                      bg-indigo-600 text-white
+                      text-sm font-medium
+                      hover:bg-indigo-700 transition">
+
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke-width="2"
+                     stroke="currentColor"
+                     class="w-4 h-4">
+
+                    <path stroke-linecap="round"
+                          stroke-linejoin="round"
+                          d="M3 12l9-9 9 9
+                             M5 10v10h14V10
+                             M9 20v-6h6v6" />
+
+                </svg>
+
+                Retour à l'accueil
+
+            </a>
+
+            <button type="button"
+                    onclick="history.back()"
+                    class="w-full sm:w-auto inline-flex items-center
+                           justify-center gap-2
+                           px-4 py-2.5 rounded-lg
+                           bg-white text-gray-700
+                           border border-gray-200
+                           text-sm font-medium
+                           hover:bg-gray-100 transition">
+
+                Retour
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+{% endblock %}

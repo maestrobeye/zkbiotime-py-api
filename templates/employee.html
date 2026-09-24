@@ -4,294 +4,325 @@
 
 {% block content %}
 
-<div class="space-y-8">
+<div class="space-y-6">  
+    <!-- Layout principal -->
+    <div class="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6">
+        <!-- ========================================================= -->
+        <!-- CARTE EMPLOYÉ -->
+        <!-- ========================================================= -->
 
-    <!-- Header -->
-    <!-- Carte employé -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <aside class="lg:sticky lg:top-6 lg:self-start">
 
-        <!-- Barre d'actions -->
-        <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
 
-            <!-- Retour + identité -->
-            <div class="flex items-center gap-3 min-w-0">
+                <!-- Identité -->
+                <div class="p-5 text-center border-b border-gray-100">
 
-                <a href="/employees" class="flex-shrink-0 w-9 h-9 flex items-center justify-center
-                      rounded-lg hover:bg-gray-100 text-gray-600 transition" title="Retour aux employés">
-
-                    ←
-
-                </a>
-            </div>
-
-            <!-- Modifier -->
-            <a href="/employees/edit/{{ employee.id }}" class="inline-flex items-center gap-2
-                  bg-indigo-600 text-white
-                  px-3 py-2 rounded-lg
-                  text-sm font-medium
-                  hover:bg-indigo-700
-                  transition flex-shrink-0">
-
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5
-                         M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-
-                </svg>
-
-                Modifier
-
-            </a>
-
-        </div>
-
-
-        <!-- Informations -->
-        <div class="p-5">
-
-            <div class="flex items-center gap-5">
-
-                <!-- Avatar -->
-                <div class="flex-shrink-0 w-12 h-12 rounded-full
-                        bg-blue-600 text-white text-xl
-                        flex items-center justify-center font-bold">
-
-                    {{ employee.first_name[0] }}{{ employee.last_name[0] }}
-
-                </div>
-
-                <!-- Informations -->
-                <div class="flex-1 min-w-0">
-
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-x-8 gap-y-4">
-
-                        <!-- Nom -->
-                        <div>
-                            <p class="text-xs font-medium text-gray-500 uppercase">
-                                Nom complet
-                            </p>
-
-                            <p class="mt-1 text-sm font-semibold text-gray-800">
-                                {{ employee.first_name }}
-                                {{ employee.last_name }}
-                            </p>
-                        </div>
-
-                        <!-- Matricule -->
-                        <div>
-                            <p class="text-xs font-medium text-gray-500 uppercase">
-                                Matricule
-                            </p>
-
-                            <p class="mt-1 text-sm font-semibold text-gray-800">
-                                {{ employee.emp_code }}
-                            </p>
-                        </div>
-
-                        <!-- Poste -->
-                        <div>
-                            <p class="text-xs font-medium text-gray-500 uppercase">
-                                Poste
-                            </p>
-
-                            <p class="mt-1 text-sm text-gray-700">
-                                {{ employee.position.position_name if employee.position else "-" }}
-                            </p>
-                        </div>
-
-                        <!-- Email -->
-                        <div>
-                            <p class="text-xs font-medium text-gray-500 uppercase">
-                                Email
-                            </p>
-
-                            <p class="mt-1 text-sm text-gray-700 truncate" title="{{ employee.email or '' }}">
-                                {{ employee.email or "-" }}
-                            </p>
-                        </div>
-
-                        <!-- Téléphone -->
-                        <div>
-                            <p class="text-xs font-medium text-gray-500 uppercase">
-                                Téléphone
-                            </p>
-
-                            <p class="mt-1 text-sm text-gray-700 truncate" title="{{ employee.mobile or '' }}">
-                                {{ employee.mobile or "-" }}
-                            </p>
-                        </div>
-
+                    <div class="mx-auto w-16 h-16 rounded-full
+                            bg-blue-600 text-white text-xl
+                            flex items-center justify-center font-bold">
+                        {{ employee.first_name[0] }}{{ employee.last_name[0] }}
                     </div>
 
-                </div>
+                    <h2 class="mt-3 text-lg font-semibold text-gray-800">
+                        {{ employee.first_name }}
+                        {{ employee.last_name }}
+                    </h2>
 
-            </div>
-
-
-            <!-- Zones -->
-            {% if employee.area %}
-
-            <div class="mt-4 pt-4 border-t border-gray-100">
-
-                <p class="text-xs font-medium text-gray-500 uppercase mb-2">
-                    Zones
-                </p>
-
-                <div class="flex flex-wrap gap-2">
-
-                    {% for a in employee.area %}
-
-                    <span class="inline-flex items-center
-                             px-2.5 py-1 rounded-full
-                             bg-indigo-50 text-indigo-700
-                             text-xs font-medium">
-
-                        {{ a.area_name }}
-
-                    </span>
-
-                    {% endfor %}
+                    <p class="mt-1 text-sm text-gray-500">
+                        {{ employee.position.position_name if employee.position else "-" }}
+                    </p>
 
                 </div>
 
-            </div>
 
-            {% endif %}
+                <!-- Informations -->
+                <div class="p-5 space-y-4">
 
-        </div>
-
-    </div>
-
-
-    <!-- Historique -->
-
-    <div class="bg-white rounded-xl shadow">
-
-        <div class="bg-white rounded-xl shadow">
-
-            <div class="border-b p-6">
-
-                <div class="flex flex-col md:flex-row
-                            md:items-center md:justify-between gap-4">
-
+                    <!-- Matricule -->
                     <div>
-                        <h2 class="text-xl font-semibold">
-                            Historique des pointages
-                        </h2>
+                        <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                            Matricule
+                        </p>
 
-                        <p class="text-sm text-gray-500 mt-1">
-                            {{ total_records }} pointages
+                        <p class="mt-1 text-sm font-semibold text-gray-800">
+                            {{ employee.emp_code }}
                         </p>
                     </div>
 
-                    <a href="/attendance/export?emp={{ employee.id }}" class="bg-green-600 text-white px-4 py-2 rounded-lg
-                              hover:bg-green-700">
-                        Export Excel
+                    <!-- Matricule -->
+                    <div>
+                        <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                            CARTE RFID
+                        </p>
+
+                        <p class="mt-1 text-sm font-semibold text-gray-800">
+                            {{ employee.card_no or "-" }}
+                        </p>
+                    </div>
+                    <!-- Email -->
+                    <div>
+                        <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                            Email
+                        </p>
+
+                        <p class="mt-1 text-sm text-gray-700 break-words">
+                            {{ employee.email or "-" }}
+                        </p>
+                    </div>
+
+
+                    <!-- Téléphone -->
+                    <div>
+                        <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                            Téléphone
+                        </p>
+
+                        <p class="mt-1 text-sm text-gray-700">
+                            {{ employee.mobile or "-" }}
+                        </p>
+                    </div>
+
+
+                    <!-- Zones -->
+                    {% if employee.area %}
+
+                    <div class="pt-4 border-t border-gray-100">
+
+                        <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
+                            Zones
+                        </p>
+
+                        <div class="flex flex-wrap gap-2">
+
+                            {% for a in employee.area %}
+
+                            <span class="inline-flex items-center
+                                     px-2.5 py-1 rounded-full
+                                     bg-indigo-50 text-indigo-700
+                                     text-xs font-medium">
+                                {{ a.area_name }}
+                            </span>
+
+                            {% endfor %}
+
+                        </div>
+
+                    </div>
+
+                    {% endif %}
+
+                </div>
+
+
+                <!-- Action -->
+                <div class="px-5 pb-5">
+
+                    <a href="/employees/edit/{{ employee.id }}" class="w-full inline-flex items-center justify-center gap-2
+                           bg-indigo-600 text-white
+                           px-4 py-2.5 rounded-lg
+                           text-sm font-medium
+                           hover:bg-indigo-700
+                           transition">
+
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5
+                               M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+
+                        </svg>
+
+                        Modifier l'employé
+
                     </a>
 
                 </div>
 
+            </div>
 
-                <!-- Filtre dates -->
+        </aside>
 
-                <form method="get" action="/employee/{{ employee.id }}" class="mt-5 flex flex-col sm:flex-row gap-3">
 
-                    <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">
-                            Du
-                        </label>
+        <!-- ========================================================= -->
+        <!-- HISTORIQUE -->
+        <!-- ========================================================= -->
 
-                        <input type="date" name="start_date" value="{{ start_date }}"
-                            class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+        <section class="bg-white rounded-xl border border-gray-100 shadow-sm min-w-0">
+
+            <!-- Header -->
+            <div class="p-5 border-b border-gray-100">
+                <div class="flex flex-col lg:flex-row
+                            lg:items-end lg:justify-between gap-4">
+
+                    <!-- Titre -->
+                    <div class="flex-shrink-0">
+
+                        <h2 class="text-lg font-semibold text-gray-800">
+                            Historique des pointages
+                        </h2>
+
+                        <p class="text-sm text-gray-500 mt-1">
+                            {{ total_records }} pointage{% if total_records != 1 %}s{% endif %}
+                        </p>
+
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">
-                            Au
-                        </label>
 
-                        <input type="date" name="end_date" value="{{ end_date }}"
-                            class="border border-gray-300 rounded-lg px-3 py-2 text-sm">
-                    </div>
+                    <!-- Actions + filtres -->
+                    <div class="flex flex-col sm:flex-row
+                                sm:items-end gap-3">
 
-                    <div class="flex items-end">
+                        <!-- Date début -->
+                        <div>
 
-                        <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg
-                                   text-sm hover:bg-indigo-700">
+                            <label class="block text-xs font-medium text-gray-500 mb-1">
+                                Du
+                            </label>
+
+                            <input type="date" name="start_date" value="{{ start_date }}" form="attendance-filter"
+                                class="border border-gray-300 rounded-lg
+                                       px-3 py-2 text-sm
+                                       focus:outline-none
+                                       focus:ring-2
+                                       focus:ring-indigo-500
+                                       focus:border-indigo-500">
+
+                        </div>
+
+
+                        <!-- Date fin -->
+                        <div>
+
+                            <label class="block text-xs font-medium text-gray-500 mb-1">
+                                Au
+                            </label>
+
+                            <input type="date" name="end_date" value="{{ end_date }}" form="attendance-filter" class="border border-gray-300 rounded-lg
+                                       px-3 py-2 text-sm
+                                       focus:outline-none
+                                       focus:ring-2
+                                       focus:ring-indigo-500
+                                       focus:border-indigo-500">
+
+                        </div>
+
+
+                        <!-- Filtrer -->
+                        <button type="submit" form="attendance-filter" class="inline-flex items-center justify-center
+                                   bg-indigo-600 text-white
+                                   px-4 py-2 rounded-lg
+                                   text-sm font-medium
+                                   hover:bg-indigo-700
+                                   transition">
+
                             Filtrer
+
                         </button>
 
+
+                        <!-- Export -->
+                        <a href="/attendance/export?emp={{ employee.id }}" class="inline-flex items-center justify-center gap-2
+                                   bg-green-600 text-white
+                                   px-4 py-2 rounded-lg
+                                   text-sm font-medium
+                                   hover:bg-green-700
+                                   transition">
+
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3
+                                       M4 4h16v16H4z" />
+
+                            </svg>
+
+                            Export Excel
+
+                        </a>
+
                     </div>
 
+                </div>
+
+
+                <!-- Form invisible servant uniquement à la soumission -->
+                <form id="attendance-filter" method="get" action="/employee/{{ employee.id }}">
                 </form>
 
             </div>
 
 
+            <!-- Tableau -->
             <div class="overflow-x-auto">
 
                 <table class="min-w-full">
 
-                    <thead class="bg-gray-100">
+                    <thead class="bg-gray-50 border-b border-gray-100">
 
                         <tr>
 
-                            <th class="px-6 py-3 text-left">
-
+                            <th class="px-5 py-3 text-left
+                                   text-xs font-semibold text-gray-500 uppercase">
                                 Date
-
                             </th>
-
-                            <th class="px-6 py-3 text-left">
-
+                            <th class="px-5 py-3 text-left
+                                   text-xs font-semibold text-gray-500 uppercase">
+                                Statut
+                            </th>
+                            <th class="px-5 py-3 text-left
+                                   text-xs font-semibold text-gray-500 uppercase">
                                 Arrivée
-
                             </th>
 
-                            <th class="px-6 py-3 text-left">
-
+                            <th class="px-5 py-3 text-left
+                                   text-xs font-semibold text-gray-500 uppercase">
                                 Départ
-
                             </th>
 
-                            <th class="px-6 py-3 text-left">
-
+                            <th class="px-5 py-3 text-left
+                                   text-xs font-semibold text-gray-500 uppercase">
                                 Total
-
                             </th>
+
                         </tr>
 
                     </thead>
 
-                    <tbody>
+
+                    <tbody class="divide-y divide-gray-100">
 
                         {% for row in records %}
 
-                        <tr class="border-b hover:bg-gray-50">
+                        <tr class="hover:bg-gray-50 transition">
 
-                            <td class="px-6 py-4">
-
+                            <td class="px-5 py-3.5 text-sm text-gray-700 whitespace-nowrap">
                                 {{ row.att_date }}
-
                             </td>
-
-                            <td class="px-6 py-4 font-mono">
-
+                             
+                            <td class="px-5 py-3.5 text-sm text-gray-700 whitespace-nowrap">
+                                <span class="px-2 py-1 rounded-full text-xs font-semibold
+                                    {% if get_attendance_status(row.clock_in) == 'Présent' %}
+                                    bg-green-100 text-green-700
+                                    {% elif get_attendance_status(row.clock_in) == 'En retard' %}
+                                    bg-yellow-100 text-yellow-700
+                                    {% else %}
+                                    bg-red-100 text-red-700
+                                    {% endif %}
+                                ">
+                                    {{ get_attendance_status(row.clock_in) }}
+                                </span>
+                            </td>
+                            <td class="px-5 py-3.5 text-sm font-mono text-gray-700">
                                 {{ row.clock_in or "-" }}
-
                             </td>
 
-                            <td class="px-6 py-4 font-mono">
-
+                            <td class="px-5 py-3.5 text-sm font-mono text-gray-700">
                                 {{ row.clock_out or "-" }}
-
                             </td>
 
-                            <td class="px-6 py-4 font-mono">
-
+                            <td class="px-5 py-3.5 text-sm font-mono font-medium text-gray-800">
                                 {{ row.total_hrs or "-" }}
-
                             </td>
 
                         </tr>
@@ -300,9 +331,31 @@
 
                         <tr>
 
-                            <td colspan="3" class="py-10 text-center text-gray-500">
+                            <td colspan="4" class="px-5 py-12 text-center">
 
-                                Aucun pointage disponible.
+                                <div class="flex flex-col items-center">
+
+                                    <div class="w-10 h-10 rounded-full
+                                            bg-gray-100
+                                            flex items-center justify-center
+                                            text-gray-400 mb-3">
+
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3
+                                               M12 21a9 9 0 100-18
+                                               9 9 0 000 18z" />
+
+                                        </svg>
+
+                                    </div>
+
+                                    <p class="text-sm text-gray-500">
+                                        Aucun pointage disponible.
+                                    </p>
+
+                                </div>
 
                             </td>
 
@@ -313,54 +366,60 @@
                     </tbody>
 
                 </table>
-                <!-- Pagination -->
-                {% if total_pages > 1 %}
-
-                <div class="border-t border-gray-100 px-6 py-4 flex items-center justify-between">
-
-                    <!-- Informations -->
-                    <p class="text-sm text-gray-500">
-                        Page {{ page }} sur {{ total_pages }}
-                        · {{ total_records }} pointages
-                    </p>
-
-                    <!-- Navigation -->
-                    <div class="flex items-center gap-2">
-
-                        {% if has_previous %}
-
-                        <a href="/employee/{{ employee.id }}?page={{ page - 1 }}&start_date={{ start_date }}&end_date={{ end_date }}"
-                            class="px-3 py-2 border border-gray-200 rounded-lg
-                  text-sm text-gray-700
-                  hover:bg-gray-50">
-                            ← Précédent
-                        </a>
-
-                        {% endif %}
-
-
-                        {% if has_next %}
-
-                        <a href="/employee/{{ employee.id }}?page={{ page + 1 }}&start_date={{ start_date }}&end_date={{ end_date }}"
-                            class="px-3 py-2 border border-gray-200 rounded-lg
-                  text-sm text-gray-700
-                  hover:bg-gray-50">
-                            Suivant →
-                        </a>
-
-                        {% endif %}
-
-                    </div>
-
-                </div>
-
-                {% endif %}
-
 
             </div>
 
-        </div>
+
+            <!-- Pagination -->
+            {% if total_pages > 1 %}
+
+            <div class="border-t border-gray-100
+                    px-5 py-4
+                    flex flex-col sm:flex-row
+                    sm:items-center sm:justify-between
+                    gap-3">
+
+                <p class="text-sm text-gray-500">
+                    Page {{ page }} sur {{ total_pages }}
+                    · {{ total_records }} pointage{% if total_records != 1 %}s{% endif %}
+                </p>
+
+
+                <div class="flex items-center gap-2">
+
+                    {% if has_previous %}
+
+                    <a href="/employee/{{ employee.id }}?page={{ page - 1 }}&start_date={{ start_date }}&end_date={{ end_date }}"
+                        class="px-3 py-2 border border-gray-200
+                           rounded-lg text-sm text-gray-700
+                           hover:bg-gray-50 transition">
+                        ← Précédent
+                    </a>
+
+                    {% endif %}
+
+
+                    {% if has_next %}
+
+                    <a href="/employee/{{ employee.id }}?page={{ page + 1 }}&start_date={{ start_date }}&end_date={{ end_date }}"
+                        class="px-3 py-2 border border-gray-200
+                           rounded-lg text-sm text-gray-700
+                           hover:bg-gray-50 transition">
+                        Suivant →
+                    </a>
+
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+            {% endif %}
+
+        </section>
 
     </div>
 
-    {% endblock %}
+</div>
+
+{% endblock %}

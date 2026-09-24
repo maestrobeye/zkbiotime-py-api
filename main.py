@@ -603,7 +603,7 @@ async def update_employee(
     email: Annotated[str | None, Form()] = None,
 ):
     token = request.session["zk_token"]
-    print(emp_code)
+    
     headers = {
         "Authorization": f"Token {token}",
         "Content-Type": "application/json",
@@ -747,7 +747,7 @@ async def update_employee(
             "card_no": card_no,
             "position": position_code,
         }
-        print(payload)
+        
         if first_name:
             payload["first_name"] = first_name
 
@@ -759,7 +759,28 @@ async def update_employee(
 
         if email:
             payload["email"] = email
+            
+        conn = get_conn()
+        cur = conn.cursor()
 
+        try:
+            cur.execute(
+                """
+                UPDATE personnel_employee
+                SET emp_code = %s 
+                WHERE id = %s
+                """, (emp_code, employee_id)
+            )
+
+            conn.commit()
+
+        except Exception:
+            conn.rollback()
+            raise
+
+        finally:
+            cur.close()
+            conn.close()
         # ==========================================
         # 5. Mise à jour de l'employé
         # ==========================================
@@ -778,6 +799,7 @@ async def update_employee(
                     + update_response.text
                 ),
             )
+
 
     # ==========================================
     # 6. Retour vers la liste
@@ -1448,7 +1470,8 @@ async def update_terminal(
             """
             UPDATE iclock_terminal
             SET is_attendance = 1, terminal_tz = 0
-            """
+            WHERE id = %s
+            """, (terminal_id)
         )
 
         conn.commit()
