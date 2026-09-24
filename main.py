@@ -1,9 +1,10 @@
-from fastapi import FastAPI, Request, Form, HTTPException, Header
+from fastapi import FastAPI, Request, Form, HTTPException, Header, UploadFile, File
 from typing import Optional
 from fastapi.responses import (
     HTMLResponse,
     RedirectResponse,
-    StreamingResponse
+    StreamingResponse,
+    FileResponse
 )
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -274,13 +275,14 @@ def employees_page(
     offset = (page - 1) * PAGE_SIZE
 
     cur.execute(
-        """
-       SELECT
+    """
+    SELECT
         e.id,
         e.emp_code,
         e.first_name,
         e.last_name,
         e.email,
+        e.photo,
         pp.position_name,
         ARRAY_AGG(DISTINCT pa.area_name)
             FILTER (WHERE pa.area_name IS NOT NULL) AS areas
@@ -297,12 +299,13 @@ def employees_page(
         e.first_name,
         e.last_name,
         e.email,
+        e.photo,
         pp.position_name
     ORDER BY e.last_name
-        LIMIT %s OFFSET %s
-        """,
-        (PAGE_SIZE, offset)
-    )
+    LIMIT %s OFFSET %s
+    """,
+    (PAGE_SIZE, offset)
+)
 
     rows = cur.fetchall()
 
@@ -315,13 +318,14 @@ def employees_page(
 
         employees.append(
             {
-                "id": r[0],
-                "code": r[1],
-                "first_name": r[2],
-                "last_name": r[3],
-                "email": r[4],
-                "position": r[5],
-                "areas": r[6] or []            
+            "id": r[0],
+            "code": r[1],
+            "first_name": r[2],
+            "last_name": r[3],
+            "email": r[4],
+            "photo": r[5],
+            "position": r[6],
+            "areas": r[7] or []        
             }
         )
     total_pages = (total + PAGE_SIZE - 1) // PAGE_SIZE
@@ -339,6 +343,374 @@ def employees_page(
                 "has_next": page < total_pages,
             }
         )
+
+# Chemin physique des photos
+PHOTO_DIRECTORY = r"C:\ZKBioTime\auth_files\photo"
+
+
+# ============================================================
+# UPLOAD PHOTO
+# ============================================================
+
+@app.post("/employees/{employee_id}/photo")
+async def upload_employee_photo(
+    employee_id: int,
+    photo: UploadFile = File(...)
+):
+
+    conn = None
+
+    try:
+
+        # ----------------------------------------------------
+        # Vérification du format
+        # ----------------------------------------------------
+
+        allowed_types = {
+            "image/jpeg": ".jpg",
+            "image/jpg": ".jpg",
+            "image/png": ".png"
+        }
+
+        if photo.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=400,
+                detail="Format accepté : JPG ou PNG"
+            )
+
+        extension = allowed_types[photo.content_type]
+
+        # ----------------------------------------------------
+        # Connexion PostgreSQL
+        # ----------------------------------------------------
+
+        conn = get_conn()
+
+        with conn.cursor() as cur:
+
+            cur.execute("""
+                SELECT
+                    id,
+                    emp_code,
+                    first_name,
+                    last_name,
+                    photo
+                FROM personnel_employee
+                WHERE id = %s;
+            """, (employee_id,))
+
+            employee = cur.fetchone()
+
+        if employee is None:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Employé {employee_id} introuvable"
+            )
+
+        emp_id = employee[0]
+        emp_code = employee[1]
+        first_name = employee[2]
+        last_name = employee[3]
+        old_photo = employee[4]
+
+        # ----------------------------------------------------
+        # Vérifier emp_code
+        # ----------------------------------------------------
+
+        if not emp_code:
+            raise HTTPException(
+                status_code=400,
+                detail="L'employé n'a pas de emp_code"
+            )
+
+        # ----------------------------------------------------
+        # Nom du fichier
+        #
+        # emp_code = 2
+        #
+        # => 2.jpg
+        # ----------------------------------------------------
+
+        filename = f"photo/{emp_code}{extension}"
+
+
+        # ----------------------------------------------------
+        # Construire le chemin UNIQUEMENT pour le stockage
+        # physique
+        # ----------------------------------------------------
+
+        photo_path = os.path.join(
+            PHOTO_DIRECTORY,
+            filename
+        )
+
+        # ----------------------------------------------------
+        # Vérifier que le dossier existe
+        # ----------------------------------------------------
+
+        if not os.path.isdir(PHOTO_DIRECTORY):
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    "Le dossier des photos n'existe pas : "
+                    + PHOTO_DIRECTORY
+                )
+            )
+
+        # ----------------------------------------------------
+        # Lire la photo
+        # ----------------------------------------------------
+
+        contents = await photo.read()
+
+        if not contents:
+            raise HTTPException(
+                status_code=400,
+                detail="La photo reçue est vide"
+            )
+
+        # Nom enregistré dans BioTime/PostgreSQL
+        photo_db = f"photo/{emp_code}{extension}"
+
+        # Chemin physique réel
+        photo_path = os.path.join(
+            PHOTO_DIRECTORY,
+            f"{emp_code}{extension}"
+        )
+        # ----------------------------------------------------
+        # Sauvegarder le fichier
+        # ----------------------------------------------------
+
+        with open(photo_path, "wb") as image_file:
+            image_file.write(contents)
+
+
+        # ----------------------------------------------------
+        # IMPORTANT :
+        # En base, on sauvegarde UNIQUEMENT :
+        #
+        #     2.jpg
+        #
+        # PAS :
+        #
+        #     C:\ZKBioTime\auth_files\photo\2.jpg
+        # ----------------------------------------------------
+
+        with conn.cursor() as cur:
+
+            cur.execute("""
+                UPDATE personnel_employee
+                SET
+                    photo = %s,
+                    update_time = NOW()
+                WHERE id = %s;
+            """, (
+                photo_db,
+                employee_id
+            ))
+
+        conn.commit()
+
+        # ----------------------------------------------------
+        # Vérification
+        # ----------------------------------------------------
+
+        return {
+            "success": True,
+
+            "employee": {
+                "id": emp_id,
+                "emp_code": emp_code,
+                "first_name": first_name,
+                "last_name": last_name
+            },
+
+            "photo": {
+                "filename": filename,
+                "saved": os.path.exists(photo_path),
+                "size": os.path.getsize(photo_path)
+            },
+
+            "message": "Photo enregistrée avec succès"
+        }
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+
+        if conn:
+            conn.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur : {str(e)}"
+        )
+
+    finally:
+
+        if conn:
+            conn.close()
+@app.get("/employees/{employee_id}/photo/view")
+def view_employee_photo(employee_id: int):
+
+    conn = None
+
+    try:
+        conn = get_conn()
+
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT photo
+                FROM personnel_employee
+                WHERE id = %s
+                """,
+                (employee_id,)
+            )
+
+            result = cur.fetchone()
+
+        if not result:
+            raise HTTPException(
+                status_code=404,
+                detail="Employé introuvable"
+            )
+
+        photo_db = result[0]
+
+        if not photo_db:
+            raise HTTPException(
+                status_code=404,
+                detail="Cet employé n'a pas de photo"
+            )
+
+        # Exemple :
+        # photo_db = "photo/2.jpg"
+        #
+        # On récupère seulement "2.jpg"
+        filename = os.path.basename(photo_db)
+
+        # Construction du chemin réel
+        photo_path = os.path.join(
+            PHOTO_DIRECTORY,
+            filename
+        )
+
+        print("Photo DB :", photo_db)
+        print("Photo physique :", photo_path)
+
+        if not os.path.isfile(photo_path):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Fichier introuvable : {photo_path}"
+            )
+
+        # Déterminer le type MIME
+        extension = os.path.splitext(filename)[1].lower()
+
+        if extension in [".jpg", ".jpeg"]:
+            media_type = "image/jpeg"
+        elif extension == ".png":
+            media_type = "image/png"
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Format d'image non supporté"
+            )
+
+        return FileResponse(
+            path=photo_path,
+            media_type=media_type
+        )
+
+    finally:
+
+        if conn:
+            conn.close()
+
+# ============================================================
+# RECUPERER LE CHEMIN D'UNE PHOTO
+# ============================================================
+
+@app.get("/employees/{employee_id}/photo")
+def get_employee_photo(employee_id: int):
+
+    conn = None
+
+    try:
+
+        conn = get_connection()
+
+        with conn.cursor() as cur:
+
+            cur.execute("""
+                SELECT
+                    id,
+                    emp_code,
+                    first_name,
+                    last_name,
+                    photo
+                FROM personnel_employee
+                WHERE id = %s;
+            """, (employee_id,))
+
+            employee = cur.fetchone()
+
+        if employee is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Employé introuvable"
+            )
+
+        emp_id = employee[0]
+        emp_code = employee[1]
+        first_name = employee[2]
+        last_name = employee[3]
+        filename = employee[4]
+
+        if not filename:
+            return {
+                "success": True,
+                "employee_id": emp_id,
+                "photo": None
+            }
+
+        # ----------------------------------------------------
+        # Construction du chemin à la demande
+        # ----------------------------------------------------
+
+        photo_path = os.path.join(
+            PHOTO_DIRECTORY,
+            filename
+        )
+
+        return {
+            "success": True,
+            "employee_id": emp_id,
+            "emp_code": emp_code,
+            "first_name": first_name,
+            "last_name": last_name,
+
+            # Valeur stockée en base
+            "photo": filename,
+
+            # Chemin construit dynamiquement
+            "path": photo_path,
+
+            "exists": os.path.isfile(photo_path),
+
+            "size": (
+                os.path.getsize(photo_path)
+                if os.path.isfile(photo_path)
+                else 0
+            )
+        }
+
+    finally:
+
+        if conn:
+            conn.close()
 
 async def get_next_position_code(client, headers):
 
@@ -1101,6 +1473,7 @@ async def sync_employees(request: Request):
                 status_code=response.status_code,
                 detail=response.text,
             )
+        print("Resync result test :", response.text)
 
     # --------------------------------------------------
     # Retour
@@ -1471,7 +1844,7 @@ async def update_terminal(
             UPDATE iclock_terminal
             SET is_attendance = 1, terminal_tz = 0
             WHERE id = %s
-            """, (terminal_id)
+            """, (terminal_id,)
         )
 
         conn.commit()

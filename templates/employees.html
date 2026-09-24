@@ -104,10 +104,31 @@
 
                         <div class="flex items-center gap-4">
 
+                            {% if emp.photo %}
+
+                            <img
+                                src="/employees/{{ emp.id }}/photo/view"
+                                alt="{{ emp.first_name }} {{ emp.last_name }}"
+                                class="w-9 h-9 rounded-full object-cover border border-gray-200"
+                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                            >
+        
                             <div
-                                class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold">
+                                class="w-9 h-9 rounded-full bg-blue-600 text-white items-center justify-center font-semibold"
+                                style="display:none;"
+                            >
                                 {{ emp.first_name[0] }}{{ emp.last_name[0] }}
                             </div>
+        
+                        {% else %}
+        
+                            <div
+                                class="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold"
+                            >
+                                {{ emp.first_name[0] }}{{ emp.last_name[0] }}
+                            </div>
+        
+                        {% endif %}
 
                             <div>
                                 <div class="font-semibold text-gray-800">
