@@ -22,6 +22,7 @@ import os
 from datetime import date, datetime, timezone, time
 
 from io import BytesIO
+from PIL import Image
 
 from typing import Annotated
 
@@ -352,6 +353,72 @@ PHOTO_DIRECTORY = r"C:\ZKBioTime\auth_files\photo"
 # UPLOAD PHOTO
 # ============================================================
 
+
+MAX_PHOTO_SIZE = 30 * 1024  # 30 Ko
+MAX_WIDTH = 320
+MAX_HEIGHT = 320
+
+
+def compress_photo(contents: bytes) -> bytes:
+
+    image = Image.open(BytesIO(contents))
+
+    # Conversion JPEG
+    if image.mode != "RGB":
+        image = image.convert("RGB")
+
+    # Première réduction
+    image.thumbnail(
+        (MAX_WIDTH, MAX_HEIGHT),
+        Image.Resampling.LANCZOS
+    )
+
+    # Essayer plusieurs qualités
+    for quality in range(85, 19, -5):
+
+        output = BytesIO()
+
+        image.save(
+            output,
+            format="JPEG",
+            quality=quality,
+            optimize=True
+        )
+
+        data = output.getvalue()
+
+        if len(data) <= MAX_PHOTO_SIZE:
+            return data
+
+    # Si toujours trop gros, réduire progressivement
+    while len(data) > MAX_PHOTO_SIZE:
+
+        width, height = image.size
+
+        new_width = int(width * 0.85)
+        new_height = int(height * 0.85)
+
+        if new_width < 100 or new_height < 100:
+            break
+
+        image = image.resize(
+            (new_width, new_height),
+            Image.Resampling.LANCZOS
+        )
+
+        output = BytesIO()
+
+        image.save(
+            output,
+            format="JPEG",
+            quality=50,
+            optimize=True
+        )
+
+        data = output.getvalue()
+
+    return data
+
 @app.post("/employees/{employee_id}/photo")
 async def upload_employee_photo(
     employee_id: int,
@@ -481,8 +548,18 @@ async def upload_employee_photo(
         # Sauvegarder le fichier
         # ----------------------------------------------------
 
+        if not contents:
+            raise HTTPException(
+                status_code=400,
+                detail="La photo est vide"
+            )
+
+        compressed_photo = compress_photo(contents)
+
         with open(photo_path, "wb") as image_file:
-            image_file.write(contents)
+            image_file.write(compressed_photo)
+        # with open(photo_path, "wb") as image_file:
+        #     image_file.write(contents)
 
 
         # ----------------------------------------------------

@@ -5,3 +5,4 @@ pandas
 httpx
 psycopg2
 pandas
+pillow
