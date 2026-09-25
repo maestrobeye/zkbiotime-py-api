@@ -1,122 +1,173 @@
 {% extends "base.html" %}
 
-{% block title %}Employé{% endblock %}
+{% block title %}Zones{% endblock %}
 
 {% block content %}
 
-<div class="p-6">
+<div class="container-fluid py-4">
+<!-- Header -->
+<div class="d-flex flex-column flex-sm-row
+            justify-content-between
+            align-items-sm-center
+            gap-3 mb-4">
 
-    <div class="flex items-center justify-between mb-6">
+    <div>
+        <h1 class="fs-2 fw-bold text-dark mb-1">
+            Zones
+        </h1>
 
-        <div>
-            <h1 class="text-2xl font-bold text-gray-800">
-                Zones
-            </h1>
-
-            <p class="text-sm text-gray-500 mt-1">
-                Gestion des zones
-            </p>
-        </div>
-
-        <a
-            href="/areas/create"
-            class="inline-flex items-center px-4 py-2
-                   bg-blue-600 text-white rounded-lg
-                   hover:bg-blue-700"
-        >
-            + Nouvelle zone
-        </a>
-
+        <p class="text-secondary mb-0">
+            Gestion des zones
+        </p>
     </div>
 
+    <a href="/areas/create"
+       class="btn btn-primary">
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        + Nouvelle zone
 
-        <table class="w-full text-sm text-left">
+    </a>
 
-            <thead class="bg-gray-50 border-b">
+</div>
+
+
+<!-- Tableau -->
+<div class="card border-0 shadow-sm">
+
+    <div class="table-responsive">
+
+        <table class="table table-hover align-middle mb-0">
+
+            <thead class="table-light">
 
                 <tr>
-                    <th class="px-6 py-4 font-semibold text-gray-700">
+
+                    <th class="px-4 py-3 fw-semibold text-secondary">
                         Code
                     </th>
 
-                    <th class="px-6 py-4 font-semibold text-gray-700">
+                    <th class="px-4 py-3 fw-semibold text-secondary">
                         Nom
                     </th>
 
-                    <th class="px-6 py-4 font-semibold text-gray-700">
+                    <th class="px-4 py-3 fw-semibold text-secondary">
                         Zone parente
                     </th>
 
-                    <th class="px-6 py-4 text-right font-semibold text-gray-700">
+                    <th class="px-4 py-3 text-end fw-semibold text-secondary">
                         Actions
                     </th>
+
                 </tr>
 
             </thead>
 
-            <tbody class="divide-y divide-gray-100">
+
+            <tbody>
 
                 {% for area in areas %}
 
-                <tr class="hover:bg-gray-50">
+                <tr>
 
-                    <td class="px-6 py-4">
-                        <span class="inline-flex items-center rounded-full
-                                     bg-gray-100 px-3 py-1
-                                     text-xs font-medium text-gray-700">
+                    <!-- Code -->
+                    <td class="px-4 py-3">
+
+                        <span class="badge rounded-pill text-bg-light border">
+
                             {{ area.area_code }}
+
                         </span>
+
                     </td>
 
-                    <td class="px-6 py-4 font-medium text-gray-800">
-                        {{ area.area_name }}
+
+                    <!-- Nom -->
+                    <td class="px-4 py-3">
+
+                        <span class="fw-semibold text-dark">
+
+                            {{ area.area_name }}
+
+                        </span>
+
                     </td>
 
-                    <td class="px-6 py-4">
+
+                    <!-- Zone parente -->
+                    <td class="px-4 py-3">
 
                         {% if area.parent_area %}
 
-                            <span class="inline-flex items-center rounded-full
-                                         bg-blue-100 px-3 py-1
-                                         text-xs font-medium text-blue-800">
-                                {{ area.parent_area }}
-                            </span>
+                        <span class="badge rounded-pill bg-primary-subtle text-primary-emphasis">
+
+                            {{ area.parent_area }}
+
+                        </span>
 
                         {% else %}
 
-                            <span class="text-gray-400">
-                                Aucune
-                            </span>
+                        <span class="text-secondary">
+
+                            Aucune
+
+                        </span>
 
                         {% endif %}
 
                     </td>
 
-                    <td class="px-6 py-4 text-right">
 
-                        <a
-                            href="/zones/edit/{{ area.id }}"
-                            class="text-blue-600 hover:text-blue-800
-                                   font-medium"
-                        >
+                    <!-- Actions -->
+                    <td class="px-4 py-3 text-end">
+
+                        <a href="/zones/edit/{{ area.id }}"
+                           class="btn btn-sm btn-outline-primary">
+
                             Modifier
+
                         </a>
 
                     </td>
 
                 </tr>
 
+
                 {% else %}
 
                 <tr>
-                    <td
-                        colspan="4"
-                        class="px-6 py-10 text-center text-gray-400"
-                    >
+
+                    <td colspan="4"
+                        class="text-center py-5 text-secondary">
+
+                        <div class="mb-2">
+
+                            <svg xmlns="http://www.w3.org/2000/svg"
+                                 width="36"
+                                 height="36"
+                                 fill="none"
+                                 viewBox="0 0 24 24"
+                                 stroke="currentColor">
+
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="1.5"
+                                      d="M3 7h5l2 2h11v10
+                                         a2 2 0 0 1-2 2H5
+                                         a2 2 0 0 1-2-2V7z" />
+
+                                <path stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      stroke-width="1.5"
+                                      d="M3 7a2 2 0 0 1 2-2h3l2 2" />
+
+                            </svg>
+
+                        </div>
+
                         Aucune zone trouvée.
+
                     </td>
+
                 </tr>
 
                 {% endfor %}
@@ -127,60 +178,103 @@
 
     </div>
 
+</div>
 
-    <!-- Pagination -->
 
-    {% if total_pages > 1 %}
+<!-- Pagination -->
 
-    <div class="flex items-center justify-center gap-2 mt-6">
+{% if total_pages > 1 %}
+
+<nav class="mt-4"
+     aria-label="Pagination des zones">
+
+    <ul class="pagination justify-content-center mb-0">
+
+
+        <!-- Précédent -->
 
         {% if page > 1 %}
 
-        <a
-            href="/areas?page={{ page - 1 }}"
-            class="px-3 py-2 border rounded-lg
-                   hover:bg-gray-50"
-        >
-            ←
-        </a>
+        <li class="page-item">
+
+            <a class="page-link"
+               href="/areas?page={{ page - 1 }}"
+               aria-label="Précédent">
+
+                &laquo;
+
+            </a>
+
+        </li>
+
+        {% else %}
+
+        <li class="page-item disabled">
+
+            <span class="page-link">
+
+                &laquo;
+
+            </span>
+
+        </li>
 
         {% endif %}
 
 
+        <!-- Pages -->
+
         {% for p in range(1, total_pages + 1) %}
 
-            <a
-                href="/areas?page={{ p }}"
-                class="
-                    px-3 py-2 rounded-lg border
-                    {% if p == page %}
-                        bg-blue-600 text-white border-blue-600
-                    {% else %}
-                        hover:bg-gray-50
-                    {% endif %}
-                "
-            >
+        <li class="page-item {% if p == page %}active{% endif %}">
+
+            <a class="page-link"
+               href="/areas?page={{ p }}">
+
                 {{ p }}
+
             </a>
+
+        </li>
 
         {% endfor %}
 
 
+        <!-- Suivant -->
+
         {% if page < total_pages %}
 
-        <a
-            href="/areas?page={{ page + 1 }}"
-            class="px-3 py-2 border rounded-lg
-                   hover:bg-gray-50"
-        >
-            →
-        </a>
+        <li class="page-item">
+
+            <a class="page-link"
+               href="/areas?page={{ page + 1 }}"
+               aria-label="Suivant">
+
+                &raquo;
+
+            </a>
+
+        </li>
+
+        {% else %}
+
+        <li class="page-item disabled">
+
+            <span class="page-link">
+
+                &raquo;
+
+            </span>
+
+        </li>
 
         {% endif %}
 
-    </div>
+    </ul>
 
-    {% endif %}
+</nav>
+
+{% endif %}
 
 </div>
 

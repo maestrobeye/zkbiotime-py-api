@@ -4,262 +4,656 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>{% block title %}ZKBioTime RH{% endblock %}</title>
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Heroicons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Bootstrap CSS LOCAL -->
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
 
     <style>
         body {
             font-family: Inter, Arial, sans-serif;
+            background-color: #f1f3f5;
+        }
+
+        /* =========================
+           SIDEBAR
+        ========================= */
+
+        .sidebar {
+            width: 260px;
+            height: 100vh;
+            background-color: #0f172a;
+            color: white;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1030;
+            box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075);
+        }
+
+        .sidebar-header {
+            height: 64px;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .sidebar-nav {
+            padding: 1rem;
         }
 
         .sidebar-link {
-            @apply flex items-center gap-3 px-4 py-3 rounded-lg transition;
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+
+            padding: .75rem 1rem;
+            margin-bottom: .35rem;
+
+            color: #cbd5e1;
+            text-decoration: none;
+
+            border-radius: .5rem;
+
+            transition: all .2s ease;
+        }
+
+        .sidebar-link:hover,
+        .sidebar-link.active {
+            color: #fff;
+            background-color: #1e293b;
+        }
+
+        .sidebar-link svg {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+
+            padding: 1rem;
+
+            border-top: 1px solid #1e293b;
+        }
+
+        .logout-link {
+            color: #fca5a5;
+        }
+
+        .logout-link:hover {
+            color: #fff;
+        }
+
+        /* =========================
+           CONTENU PRINCIPAL
+        ========================= */
+
+        .main-wrapper {
+            margin-left: 260px;
+            min-height: 100vh;
+        }
+
+        /* =========================
+           HEADER
+        ========================= */
+
+        .main-header {
+            height: 64px;
+
+            position: fixed;
+            top: 0;
+            right: 0;
+            left: 260px;
+
+            z-index: 1020;
+
+            background-color: #fff;
+
+            box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075);
+        }
+
+        .main-content {
+            padding: 88px 2rem 2rem;
+        }
+
+        /* =========================
+           PROFIL
+        ========================= */
+
+        .user-avatar {
+            width: 42px;
+            height: 42px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 50%;
+
+            background-color: #0d6efd;
+            color: white;
+
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        /* =========================
+           MOBILE
+        ========================= */
+
+        @media (max-width: 991.98px) {
+
+            .sidebar {
+                width: 220px;
+            }
+
+            .main-wrapper {
+                margin-left: 220px;
+            }
+
+            .main-header {
+                left: 220px;
+            }
+
+            .main-content {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+
+            .sidebar {
+                position: static;
+                width: 100%;
+                height: auto;
+            }
+
+            .sidebar-footer {
+                position: static;
+            }
+
+            .main-wrapper {
+                margin-left: 0;
+            }
+
+            .main-header {
+                position: static;
+                height: auto;
+                padding: 1rem;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+        }
+
+        /* Badge zones */
+        .bg-primary-subtle {
+            background-color: #e7f1ff !important;
+        }
+
+        /* Table */
+        .table> :not(caption)>*>* {
+            vertical-align: middle;
+        }
+
+        /* Cartes */
+        .card {
+            border-radius: .75rem;
+        }
+
+        /* Boutons */
+        .btn {
+            border-radius: .5rem;
         }
     </style>
 
 </head>
 
-<body class="bg-gray-100">
+<body>
 
-    <div class="flex min-h-screen">
+    <!-- ==========================================
+         SIDEBAR
+    =========================================== -->
 
-        <!-- Sidebar -->
-        <aside class="fixed left-0 top-0 h-screen w-64 bg-slate-900 text-white shadow-xl z-50">
-            <div class="h-16 flex items-center justify-center border-b border-slate-800">
-                <h1 class="text-2xl font-bold">
-                    ZKBioTime RH
-                </h1>
-            </div>
+    <aside class="sidebar">
 
-            <nav class="p-4 space-y-2">
+        <!-- Logo -->
+        <div class="sidebar-header d-flex align-items-center justify-content-center">
 
-                <a href="/" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800">
-
-                    <i data-lucide="layout-dashboard"></i>
-
-                    Tableau de bord
-
-                </a>
-
-                <a href="/employees" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800">
-
-                    <i data-lucide="users"></i>
-
-                    Agents
-
-                </a>
-
-                <a href="/attendance" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800">
-
-                    <i data-lucide="clock-3"></i>
-
-                    Pointages
-
-                </a>
-
-                <a href="/zones" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800">
-                    <i data-lucide="file-spreadsheet"></i>
-                    Zones
-                </a>
-
-                <a href="/pointeurs" class="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800">
-                    <i data-lucide="file-spreadsheet"></i>
-                    Pointeurs
-                </a>
-
-            </nav>
-
-            <div class="absolute bottom-0 w-64 border-t border-slate-800 p-4">
-
-                <a href="/logout" class="flex items-center gap-3 text-red-300 hover:text-white">
-
-                    <i data-lucide="log-out"></i>
-
-                    Déconnexion
-
-                </a>
-
-            </div>
-
-        </aside>
-
-        <!-- Contenu -->
-        <div class="flex-1 flex flex-col ml-64">
-            <!-- Header -->
-            <header
-                class="fixed top-0 right-0 left-64 z-50 bg-white shadow h-16 flex items-center justify-between px-8">
-                <div>
-                    <h2 class="font-semibold text-xl text-gray-700">
-                        {% block header %}
-                        Tableau de bord
-                        {% endblock %}
-                    </h2>
-                </div>
-
-                <div class="flex items-center gap-4">
-
-                    <div class="text-right">
-
-                        <div class="font-semibold">
-                            {{ request.session.get("user","RH") }}
-                        </div>
-
-                        <div class="text-sm text-gray-500">
-                            Ressources Humaines
-                        </div>
-
-                    </div>
-
-                    <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center">
-
-                        {{ request.session.get("user","R")[0]|upper }}
-
-                    </div>
-
-                </div>
-
-            </header>
-
-            <!-- Page -->
-            <main class="flex-1 p-8 overflow-y-auto h-screen pt-24">
-                {% block content %}
-                {% endblock %}
-
-            </main>
+            <h1 class="h4 fw-bold mb-0">
+                ZKBioTime RH
+            </h1>
 
         </div>
 
+
+        <!-- Navigation -->
+        <nav class="sidebar-nav">
+
+            <!-- Tableau de bord -->
+            <a href="/" class="sidebar-link">
+
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                    <rect width="7" height="9" x="3" y="3" rx="1" />
+                    <rect width="7" height="5" x="14" y="3" rx="1" />
+                    <rect width="7" height="9" x="14" y="12" rx="1" />
+                    <rect width="7" height="5" x="3" y="16" rx="1" />
+
+                </svg>
+
+                <span>Tableau de bord</span>
+
+            </a>
+
+
+            <!-- Agents -->
+            <a href="/employees" class="sidebar-link">
+
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+
+                </svg>
+
+                <span>Agents</span>
+
+            </a>
+
+
+            <!-- Pointages -->
+            <a href="/attendance" class="sidebar-link">
+
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+
+                </svg>
+
+                <span>Pointages</span>
+
+            </a>
+
+
+            <!-- Zones -->
+            <a href="/zones" class="sidebar-link">
+
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                    <rect width="8" height="8" x="3" y="3" rx="1" />
+                    <path d="M3 9h8" />
+                    <path d="M9 3v8" />
+
+                    <rect width="8" height="8" x="13" y="13" rx="1" />
+                    <path d="M13 19h8" />
+                    <path d="M19 13v8" />
+
+                </svg>
+
+                <span>Zones</span>
+
+            </a>
+
+
+            <!-- Pointeurs -->
+            <a href="/pointeurs" class="sidebar-link">
+
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                    <!-- Corps de l'appareil -->
+                    <rect x="5" y="2" width="14" height="20" rx="2" />
+
+                    <!-- Écran -->
+                    <rect x="8" y="5" width="8" height="5" rx="1" />
+
+                    <!-- Lecteur biométrique -->
+                    <path d="M12 13v4" />
+                    <path d="M10 14.5c0 1.5 .8 2.5 2 2.5s2-.9 2-2.5" />
+                    <path d="M9 14c0 2.5 1.2 4 3 4" />
+                    <path d="M15 14c0 2.5-1.2 4-3 4" />
+
+                </svg>
+
+                <span>Pointeurs</span>
+
+            </a>
+
+        </nav>
+
+
+        <!-- Déconnexion -->
+        <div class="sidebar-footer">
+
+            <a href="/logout" class="sidebar-link logout-link mb-0">
+
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+
+                </svg>
+
+                <span>Déconnexion</span>
+
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <!-- ==========================================
+         CONTENU PRINCIPAL
+    =========================================== -->
+
+    <div class="main-wrapper">
+
+
+        <!-- Header -->
+        <header class="main-header d-flex align-items-center justify-content-between px-4 px-lg-5">
+
+            <div>
+
+                <h2 class="h5 fw-semibold text-secondary mb-0">
+
+                    {% block header %}
+                    Tableau de bord
+                    {% endblock %}
+
+                </h2>
+
+            </div>
+
+
+            <!-- Utilisateur -->
+            <div class="d-flex align-items-center gap-3">
+
+                <div class="text-end">
+
+                    <div class="fw-semibold">
+
+                        {{ request.session.get("user", "RH") }}
+
+                    </div>
+
+                    <div class="small text-secondary">
+
+                        Ressources Humaines
+
+                    </div>
+
+                </div>
+
+
+                <div class="user-avatar">
+
+                    {{ request.session.get("user", "R")[0]|upper }}
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- ======================================
+             CONTENU DE LA PAGE
+        ======================================= -->
+
+        <main class="main-content">
+
+            {% block content %}
+            {% endblock %}
+
+        </main>
+
     </div>
+
+
+    <!-- ==========================================
+         BOOTSTRAP JS LOCAL
+    =========================================== -->
+
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+
+
+    <!-- ==========================================
+         FILTRE PAR PÉRIODE
+    =========================================== -->
+
     <script>
+
         const periode = document.getElementById('periode');
         const startDate = document.getElementById('start_date');
         const endDate = document.getElementById('end_date');
 
-        function formatDate(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
+        if (periode && startDate && endDate) {
 
-            return `${year}-${month}-${day}`;
+            function formatDate(date) {
+
+                const year = date.getFullYear();
+
+                const month = String(
+                    date.getMonth() + 1
+                ).padStart(2, '0');
+
+                const day = String(
+                    date.getDate()
+                ).padStart(2, '0');
+
+                return `${year}-${month}-${day}`;
+            }
+
+
+            periode.addEventListener('change', function () {
+
+                const today = new Date();
+
+                let start;
+                let end;
+
+
+                switch (this.value) {
+
+                    case "Aujourd'hui":
+
+                        start = new Date(today);
+                        end = new Date(today);
+
+                        break;
+
+
+                    case "Hier":
+
+                        start = new Date(today);
+
+                        start.setDate(
+                            today.getDate() - 1
+                        );
+
+                        end = new Date(start);
+
+                        break;
+
+
+                    case "Cette semaine":
+
+                        start = new Date(today);
+
+                        const day = today.getDay();
+
+                        const diff =
+                            day === 0 ? 6 : day - 1;
+
+                        start.setDate(
+                            today.getDate() - diff
+                        );
+
+                        end = new Date(start);
+
+                        end.setDate(
+                            start.getDate() + 6
+                        );
+
+                        break;
+
+
+                    case "Ce mois":
+
+                        start = new Date(
+                            today.getFullYear(),
+                            today.getMonth(),
+                            1
+                        );
+
+                        end = new Date(
+                            today.getFullYear(),
+                            today.getMonth() + 1,
+                            0
+                        );
+
+                        break;
+
+
+                    case "Cette année":
+
+                        start = new Date(
+                            today.getFullYear(),
+                            0,
+                            1
+                        );
+
+                        end = new Date(
+                            today.getFullYear(),
+                            11,
+                            31
+                        );
+
+                        break;
+
+
+                    default:
+
+                        return;
+                }
+
+
+                startDate.value =
+                    formatDate(start);
+
+                endDate.value =
+                    formatDate(end);
+
+            });
+
         }
 
-        periode.addEventListener('change', function () {
-            const today = new Date();
-
-            let start;
-            let end;
-
-            switch (this.value) {
-
-                case "Aujourd'hui":
-                    start = new Date(today);
-                    end = new Date(today);
-                    break;
-
-                case "Hier":
-                    start = new Date(today);
-                    start.setDate(today.getDate() - 1);
-
-                    end = new Date(start);
-                    break;
-
-                case "Cette semaine":
-                    start = new Date(today);
-
-                    // Lundi = début de semaine
-                    const day = today.getDay();
-                    const diff = day === 0 ? 6 : day - 1;
-
-                    start.setDate(today.getDate() - diff);
-
-                    end = new Date(start);
-                    end.setDate(start.getDate() + 6);
-                    break;
-
-                case "Ce mois":
-                    start = new Date(
-                        today.getFullYear(),
-                        today.getMonth(),
-                        1
-                    );
-
-                    end = new Date(
-                        today.getFullYear(),
-                        today.getMonth() + 1,
-                        0
-                    );
-                    break;
-
-                case "Cette année":
-                    start = new Date(
-                        today.getFullYear(),
-                        0,
-                        1
-                    );
-
-                    end = new Date(
-                        today.getFullYear(),
-                        11,
-                        31
-                    );
-                    break;
-
-                default:
-                    return;
-            }
-
-            startDate.value = formatDate(start);
-            endDate.value = formatDate(end);
-        });
     </script>
+
+
+    <!-- ==========================================
+         EXPORT EXCEL
+    =========================================== -->
+
     <script>
-        document.getElementById("exportExcel").addEventListener("click", function (event) {
 
-            event.preventDefault();
+        const exportExcel =
+            document.getElementById("exportExcel");
 
-            const start = document.getElementById("start_date").value;
-            const end = document.getElementById("end_date").value;
+        if (exportExcel) {
 
-            if (!start || !end) {
-                alert("Veuillez sélectionner les deux dates.");
-                return;
-            }
+            exportExcel.addEventListener(
+                "click",
+                function (event) {
 
-            window.location.href =
-                `/attendance/export?start_date=${encodeURIComponent(start)}&end_date=${encodeURIComponent(end)}`;
-        });
+                    event.preventDefault();
+
+                    const start =
+                        document.getElementById("start_date")?.value;
+
+                    const end =
+                        document.getElementById("end_date")?.value;
+
+
+                    if (!start || !end) {
+
+                        alert(
+                            "Veuillez sélectionner les deux dates."
+                        );
+
+                        return;
+                    }
+
+
+                    window.location.href =
+                        `/attendance/export?start_date=${encodeURIComponent(start)}&end_date=${encodeURIComponent(end)}`;
+
+                }
+            );
+
+        }
+
     </script>
+
+
+    <!-- ==========================================
+         SYNCHRONISATION DES AGENTS
+    =========================================== -->
+
     <script>
-        lucide.createIcons();
+
+        const syncForm =
+            document.getElementById("syncForm");
+
+        const syncBtn =
+            document.getElementById("syncEmployeesBtn");
+
+        const syncText =
+            document.getElementById("syncText");
+
+        const syncIcon =
+            document.getElementById("syncIcon");
+
+
+        if (syncForm && syncBtn && syncText && syncIcon) {
+
+            syncForm.addEventListener(
+                "submit",
+                function () {
+
+                    syncBtn.disabled = true;
+
+                    syncText.textContent =
+                        "Synchronisation...";
+
+                    syncIcon.classList.add(
+                        "spin"
+                    );
+
+                }
+            );
+
+        }
+
     </script>
-  <script>
-    const syncForm = document.getElementById("syncForm");
-    const syncBtn = document.getElementById("syncEmployeesBtn");
-    const syncText = document.getElementById("syncText");
-    const syncIcon = document.getElementById("syncIcon");
 
-    syncForm.addEventListener("submit", function () {
-
-        syncBtn.disabled = true;
-
-        syncText.textContent = "Synchronisation...";
-        syncIcon.classList.add("animate-spin");
-
-    });
-</script>
-
-<!-- <script>
-    const empCode = document.getElementById("emp_code");
-    
-    empCode.addEventListener("input", function () {
-        this.value = this.value.replace(/\s/g, "");
-    });
-    </script> -->
 
 </body>
 

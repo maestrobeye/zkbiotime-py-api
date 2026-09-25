@@ -2,205 +2,283 @@
 
 {% block content %}
 
+<div class="container py-4">
+<div class="row justify-content-center">
+    <div class="col-12 col-xl-10">
 
-<div class="max-w-5xl mx-auto px-4">
+        <!-- Header -->
+        <div class="mb-4">
+            <h1 class="h2 fw-bold text-dark mb-1">
+                Créer un agent
+            </h1>
 
-    <!-- Header -->
-    <div class="mb-2">
-        <h1 class="text-2xl font-bold text-gray-900">
-            Créer un agent
-        </h1>
-        <p class="mt-1 text-sm text-gray-500">
-            Renseignez les informations de l'agent.
-        </p>
-    </div>
+            <p class="text-muted mb-0">
+                Renseignez les informations de l'agent.
+            </p>
+        </div>
 
-    <!-- Messages -->
-    <div id="successMessage"
-        class="hidden mb-6 rounded-lg bg-green-50 border border-green-200 p-4 text-sm text-green-700">
-    </div>
+        <!-- Messages -->
+        <div id="successMessage"
+            class="alert alert-success d-none mb-4"
+            role="alert">
+        </div>
 
-    <div id="errorMessage" class="hidden mb-6 rounded-lg bg-red-50 border border-red-200 p-4 text-sm text-red-700">
-    </div>
+        <div id="errorMessage"
+            class="alert alert-danger d-none mb-4"
+            role="alert">
+        </div>
 
-    <!-- Formulaire -->
-    <form id="employeeForm" method="POST" action="/employees/create"
-        class="bg-white shadow-sm ring-1 ring-gray-200 rounded-xl p-6">
+        <!-- Formulaire -->
+        <form id="employeeForm"
+              method="POST"
+              action="/employees/create"
+              class="bg-white border rounded-3 shadow-sm">
 
-        <!-- Informations professionnelles -->
-        <div class="mb-8">
+            <div class="p-4 p-md-5">
 
-            <h2 class="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-3">
-                Informations professionnelles
-            </h2>
+                <!-- Informations professionnelles -->
+                <div class="mb-5">
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <div class="border-bottom pb-3 mb-4">
+                        <h2 class="h5 fw-semibold text-dark mb-1">
+                            Informations professionnelles
+                        </h2>
 
-                <!-- Code employé -->
-                <div>
-                    <label for="emp_code" class="block text-sm font-medium text-gray-700 mb-2">
-                        Matricule de l'agent <span class="text-red-500">*</span>
-                    </label>
+                        <p class="text-muted small mb-0">
+                            Informations nécessaires à l'identification professionnelle de l'agent.
+                        </p>
+                    </div>
 
-                    <input type="text" id="emp_code" name="emp_code" required placeholder="Ex : 0000/ISEP-TH" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5
-                               text-sm text-gray-900 shadow-sm
-                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
-                               outline-none">
+                    <div class="row g-4">
+
+                        <!-- Code employé -->
+                        <div class="col-12 col-md-6">
+
+                            <label for="emp_code" class="form-label fw-medium">
+                                Matricule de l'agent
+                                <span class="text-danger">*</span>
+                            </label>
+
+                            <input
+                                type="text"
+                                id="emp_code"
+                                name="emp_code"
+                                required
+                                placeholder="Ex : 0000/ISEP-TH"
+                                class="form-control"
+                            >
+
+                        </div>
+
+                        <!-- Carte RFID -->
+                        <div class="col-12 col-md-6">
+
+                            <label for="card_no" class="form-label fw-medium">
+                                N° Carte RFID de l'agent
+                                <span class="text-danger">*</span>
+                            </label>
+
+                            <input
+                                type="number"
+                                id="card_no"
+                                name="card_no"
+                                required
+                                placeholder="Ex : 111111111"
+                                class="form-control"
+                            >
+
+                        </div>
+
+                        <!-- Fonction -->
+                        <div class="col-12 col-md-6">
+
+                            <label for="position" class="form-label fw-medium">
+                                Fonction
+                                <span class="text-danger">*</span>
+                            </label>
+
+                            <input
+                                type="text"
+                                id="position"
+                                name="position"
+                                required
+                                placeholder="Ex : Responsable administratif"
+                                class="form-control"
+                            >
+
+                        </div>
+
+                        <!-- Téléphone -->
+                        <div class="col-12 col-md-6">
+
+                            <label for="mobile" class="form-label fw-medium">
+                                Téléphone
+                                <span class="text-danger">*</span>
+                            </label>
+
+                            <input
+                                type="tel"
+                                id="mobile"
+                                name="mobile"
+                                required
+                                placeholder="Ex : +221 77 332 34 13"
+                                class="form-control"
+                            >
+
+                        </div>
+
+                        <!-- Zones -->
+                        <div class="col-12">
+
+                            <label for="area" class="form-label fw-medium">
+                                Zones
+                                <span class="text-danger">*</span>
+                            </label>
+
+                            <select
+                                id="area"
+                                name="area"
+                                multiple
+                                required
+                                class="form-select"
+                                size="5"
+                            >
+
+                                {% for area in areas %}
+
+                                <option value="{{ area.id }}">
+                                    {{ area.area_name }}
+                                </option>
+
+                                {% endfor %}
+
+                            </select>
+
+                            <div class="form-text">
+                                Maintenez Ctrl ou Cmd pour sélectionner plusieurs zones.
+                            </div>
+
+                        </div>
+
+                    </div>
+
                 </div>
-                <div>
-                    <label for="card_no" class="block text-sm font-medium text-gray-700 mb-2">
-                        N° Carte RFID de l'agent <span class="text-red-500">*</span>
-                    </label>
 
-                    <input type="number" id="card_no" name="card_no" required placeholder="Ex : 111111111" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5
-                               text-sm text-gray-900 shadow-sm
-                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
-                               outline-none">
-                </div>
 
-                <div>
-                    <label for="card_no" class="block text-sm font-medium text-gray-700 mb-2">
-                        Fonction <span class="text-red-500">*</span>
-                    </label>
+                <!-- Informations personnelles -->
+                <div class="mb-4">
 
-                    <input type="text" id="position" name="position" required placeholder="Ex : 111111111" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5
-                               text-sm text-gray-900 shadow-sm
-                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
-                               outline-none">
-                </div>
+                    <div class="border-bottom pb-3 mb-4">
+                        <h2 class="h5 fw-semibold text-dark mb-1">
+                            Informations personnelles
+                        </h2>
 
-                <div>
-                    <label for="mobile" class="block text-sm font-medium text-gray-700 mb-2">
-                        Téléphone <span class="text-red-500">*</span>
-                    </label>
+                        <p class="text-muted small mb-0">
+                            Coordonnées et informations personnelles de l'agent.
+                        </p>
+                    </div>
 
-                    <input type="text" id="mobile" name="mobile" required placeholder="Ex : +22 77 332 34 13" class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5
-                               text-sm text-gray-900 shadow-sm
-                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
-                               outline-none">
-                </div>
-                <!-- Zones -->
-                <div class="md:col-span-2">
+                    <div class="row g-4">
 
-                    <label for="area" class="block text-sm font-medium text-gray-700 mb-2">
-                        Zones <span class="text-red-500">*</span>
-                    </label>
+                        <!-- Prénom -->
+                        <div class="col-12 col-md-6">
 
-                    <select id="area" name="area" multiple required class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5
-                               text-sm text-gray-900 shadow-sm
-                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
-                               outline-none">
-                        {% for area in areas %}
-                        <option value="{{ area.id }}">
-                            {{ area.area_name }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                            <label for="first_name" class="form-label fw-medium">
+                                Prénom
+                            </label>
 
-                    <p class="mt-1 text-xs text-gray-500">
-                        Maintenez Ctrl ou Cmd pour sélectionner plusieurs zones.
-                    </p>
+                            <input
+                                type="text"
+                                id="first_name"
+                                name="first_name"
+                                placeholder="Prénom"
+                                class="form-control"
+                            >
+
+                        </div>
+
+                        <!-- Nom -->
+                        <div class="col-12 col-md-6">
+
+                            <label for="last_name" class="form-label fw-medium">
+                                Nom
+                            </label>
+
+                            <input
+                                type="text"
+                                id="last_name"
+                                name="last_name"
+                                placeholder="Nom"
+                                class="form-control"
+                            >
+
+                        </div>
+
+                        <!-- Email -->
+                        <div class="col-12 col-md-6">
+
+                            <label for="email" class="form-label fw-medium">
+                                Email
+                            </label>
+
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                placeholder="exemple@email.com"
+                                class="form-control"
+                            >
+
+                        </div>
+
+                    </div>
 
                 </div>
 
             </div>
-        </div>
 
 
-        <!-- Informations personnelles -->
-        <div class="mb-8">
+            <!-- Boutons -->
+            <div class="border-top bg-light px-4 px-md-5 py-3">
 
-            <h2 class="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-3">
-                Informations personnelles
-            </h2>
+                <div class="d-flex justify-content-end gap-2">
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                    <a
+                        href="/employees"
+                        class="btn btn-outline-secondary"
+                    >
+                        Annuler
+                    </a>
 
-                <!-- Prénom -->
-                <div>
-                    <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">
-                        Prénom
-                    </label>
+                    <button
+                        type="submit"
+                        id="submitButton"
+                        class="btn btn-primary d-inline-flex align-items-center gap-2"
+                    >
 
-                    <input type="text" id="first_name" name="first_name" placeholder="Prénom" class="w-full rounded-lg border border-gray-300 px-3 py-2.5
-                               text-sm shadow-sm
-                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
-                               outline-none">
-                </div>
+                        <span id="submitText">
+                            Créer l'employé
+                        </span>
 
-                <!-- Nom -->
-                <div>
-                    <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">
-                        Nom
-                    </label>
+                        <!-- Loading -->
+                        <span
+                            id="loadingIcon"
+                            class="spinner-border spinner-border-sm d-none"
+                            role="status"
+                            aria-hidden="true">
+                        </span>
 
-                    <input type="text" id="last_name" name="last_name" placeholder="Nom" class="w-full rounded-lg border border-gray-300 px-3 py-2.5
-                               text-sm shadow-sm
-                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
-                               outline-none">
-                </div>
+                    </button>
 
-                <!-- Téléphone -->
-                <div>
-                    <label for="mobile" class="block text-sm font-medium text-gray-700 mb-2">
-                        Téléphone
-                    </label>
-
-                    <input type="tel" id="mobile" name="mobile" placeholder="Ex : 770000000" class="w-full rounded-lg border border-gray-300 px-3 py-2.5
-                               text-sm shadow-sm
-                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
-                               outline-none">
-                </div>
-
-                <!-- Email -->
-                <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                        Email
-                    </label>
-
-                    <input type="email" id="email" name="email" placeholder="exemple@email.com" class="w-full rounded-lg border border-gray-300 px-3 py-2.5
-                               text-sm shadow-sm
-                               focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20
-                               outline-none">
                 </div>
 
             </div>
-        </div>
 
+        </form>
 
-        <!-- Boutons -->
-        <div class="flex items-center justify-end gap-3 pt-5 border-t border-gray-200">
+    </div>
+</div>
 
-            <button type="reset" class="rounded-lg border border-gray-300 bg-white px-5 py-2.5
-                       text-sm font-medium text-gray-700
-                       hover:bg-gray-50
-                       focus:outline-none focus:ring-2 focus:ring-gray-500/20">
-                Annuler
-            </button>
-
-            <button type="submit" id="submitButton" class="inline-flex items-center gap-2 rounded-lg bg-indigo-600
-                       px-5 py-2.5 text-sm font-semibold text-white shadow-sm
-                       hover:bg-indigo-700
-                       focus:outline-none focus:ring-2 focus:ring-indigo-500/50
-                       disabled:opacity-50 disabled:cursor-not-allowed">
-
-                <span id="submitText">
-                    Créer l'employé
-                </span>
-
-                <!-- Loading -->
-                <svg id="loadingIcon" class="hidden h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none"
-                    viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg>
-
-            </button>
-
-        </div>
-
-    </form>
 </div>
 
 {% endblock %}

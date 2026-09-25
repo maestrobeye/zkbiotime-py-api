@@ -1,40 +1,36 @@
-from PIL import Image
-import os
+import marshal
+import types
+import dis
 
-path = r"C:\ZKBioTime\auth_files\photo\2.jpg"
+PATH = r"C:\ZKBioTime\mysite\base\management\commands\migrate_photo.pyc"
 
-print("================================")
-print("ANALYSE PHOTO")
-print("================================")
+with open(PATH, "rb") as f:
+    f.read(16)  # header Python 3.11
+    code = marshal.load(f)
 
-print("Existe :", os.path.exists(path))
 
-if not os.path.exists(path):
-    exit()
+def inspect(code, level=0):
+    indent = " " * level
 
-size = os.path.getsize(path)
+    print(f"\n{indent}===== {code.co_name} =====")
 
-print("Taille :", size, "octets")
-print("Taille :", round(size / 1024, 2), "Ko")
+    if code.co_names:
+        print(f"{indent}NAMES:")
+        for name in code.co_names:
+            print(f"{indent}  {name}")
 
-with open(path, "rb") as f:
-    data = f.read()
+    if code.co_consts:
+        print(f"{indent}CONSTANTS:")
+        for value in code.co_consts:
+            if isinstance(value, (str, bytes, int, float)):
+                print(f"{indent}  {value!r}")
 
-print("Header HEX :", data[:32].hex(" "))
-print("Footer HEX :", data[-32:].hex(" "))
+    print(f"\n{indent}BYTECODE:")
+    dis.dis(code)
 
-try:
-    image = Image.open(path)
+    for const in code.co_consts:
+        if isinstance(const, types.CodeType):
+            inspect(const, level + 4)
 
-    print("Format :", image.format)
-    print("Largeur :", image.width)
-    print("Hauteur :", image.height)
-    print("Mode :", image.mode)
 
-    image.verify()
-
-    print("Pillow : OK")
-
-except Exception as e:
-    print("Pillow : ERREUR")
-    print(str(e))
+inspect(code)

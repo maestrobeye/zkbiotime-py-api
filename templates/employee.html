@@ -4,261 +4,180 @@
 
 {% block content %}
 
-<div class="space-y-6">
-    <!-- Layout principal -->
-    <div class="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6">
+<div class="container-fluid px-0">
+
+    <div class="row g-4">
+
         <!-- ========================================================= -->
         <!-- CARTE EMPLOYÉ -->
         <!-- ========================================================= -->
 
-        <aside class="lg:sticky lg:top-6 lg:self-start">
+        <div class="col-12 col-lg-4 col-xl-3">
 
-            <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <aside class="sticky-top" style="top: 80px;">
 
-                <!-- Identité -->
-                <div class="p-5 text-center border-b border-gray-100">
+                <div class="card border-0 shadow-sm overflow-hidden">
 
-                    {% if employee.photo %}
-                
+                    <!-- Identité -->
+                    <div class="card-body text-center border-bottom">
+
+                        {% if employee.photo %}
+
                         <img
-                            src="/employees/{{ employee.id }}/photo/view"
+                            src="http://localhost/{{ employee.photo }}"
                             alt="{{ employee.first_name }} {{ employee.last_name }}"
-                            class="mx-auto w-32 h-32 rounded-full object-cover border border-gray-200"
+                            class="rounded-circle border mx-auto d-block"
+                            style="width: 128px; height: 128px; object-fit: cover;"
                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                         >
-                
+
                         <div
-                            class="mx-auto w-32 h-32 rounded-full bg-blue-600 text-white text-2xl items-center justify-center font-bold"
-                            style="display:none;"
+                            class="rounded-circle bg-primary text-white fw-bold fs-3 align-items-center justify-content-center mx-auto"
+                            style="width: 128px; height: 128px; display:none;"
                         >
                             {{ employee.first_name[0] }}{{ employee.last_name[0] }}
                         </div>
-                
-                    {% else %}
-                
-                        <div class="mx-auto w-32 h-32 rounded-full
-                                    bg-blue-600 text-white text-2xl
-                                    flex items-center justify-center font-bold">
+
+                        {% else %}
+
+                        <div
+                            class="rounded-circle bg-primary text-white fw-bold fs-3 d-flex align-items-center justify-content-center mx-auto"
+                            style="width: 128px; height: 128px;"
+                        >
                             {{ employee.first_name[0] }}{{ employee.last_name[0] }}
                         </div>
-                
-                    {% endif %}
-                
-                    <h2 class="mt-3 text-lg font-semibold text-gray-800">
-                        {{ employee.first_name }}
-                        {{ employee.last_name }}
-                    </h2>
-                
-                    <p class="mt-1 text-sm text-gray-500">
-                        {{ employee.position.position_name if employee.position else "-" }}
-                    </p>
-                
-                </div>
-                
+
+                        {% endif %}
 
 
-                <!-- Informations -->
-                <div class="p-5 space-y-4">
+                        <h2 class="h5 fw-semibold text-dark mt-3 mb-1">
 
-                    <!-- Matricule -->
-                    <div>
-                        <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">
-                            Matricule
-                        </p>
+                            {{ employee.first_name }}
+                            {{ employee.last_name }}
 
-                        <p class="mt-1 text-sm font-semibold text-gray-800">
-                            {{ employee.emp_code }}
-                        </p>
-                    </div>
-
-                    <!-- Matricule -->
-                    <div>
-                        <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">
-                            CARTE RFID
-                        </p>
-
-                        <p class="mt-1 text-sm font-semibold text-gray-800">
-                            {{ employee.card_no or "-" }}
-                        </p>
-                    </div>
-                    <!-- Email -->
-                    <div>
-                        <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">
-                            Email
-                        </p>
-
-                        <p class="mt-1 text-sm text-gray-700 break-words">
-                            {{ employee.email or "-" }}
-                        </p>
-                    </div>
-
-
-                    <!-- Téléphone -->
-                    <div>
-                        <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">
-                            Téléphone
-                        </p>
-
-                        <p class="mt-1 text-sm text-gray-700">
-                            {{ employee.mobile or "-" }}
-                        </p>
-                    </div>
-
-
-                    <!-- Zones -->
-                    {% if employee.area %}
-
-                    <div class="pt-4 border-t border-gray-100">
-
-                        <p class="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
-                            Zones
-                        </p>
-
-                        <div class="flex flex-wrap gap-2">
-
-                            {% for a in employee.area %}
-
-                            <span class="inline-flex items-center
-                                     px-2.5 py-1 rounded-full
-                                     bg-indigo-50 text-indigo-700
-                                     text-xs font-medium">
-                                {{ a.area_name }}
-                            </span>
-
-                            {% endfor %}
-
-                        </div>
-
-                    </div>
-
-                    {% endif %}
-
-                </div>
-
-
-                <!-- Action -->
-                <div class="px-5 pb-5">
-
-                    <a href="/employees/edit/{{ employee.id }}" class="w-full inline-flex items-center justify-center gap-2
-                           bg-indigo-600 text-white
-                           px-4 py-2.5 rounded-lg
-                           text-sm font-medium
-                           hover:bg-indigo-700
-                           transition">
-
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5
-                               M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-
-                        </svg>
-
-                        Modifier l'employé
-
-                    </a>
-
-                </div>
-
-            </div>
-
-        </aside>
-
-
-        <!-- ========================================================= -->
-        <!-- HISTORIQUE -->
-        <!-- ========================================================= -->
-
-        <section class="bg-white rounded-xl border border-gray-100 shadow-sm min-w-0">
-
-            <!-- Header -->
-            <div class="p-5 border-b border-gray-100">
-                <div class="flex flex-col lg:flex-row
-                            lg:items-end lg:justify-between gap-4">
-
-                    <!-- Titre -->
-                    <div class="flex-shrink-0">
-
-                        <h2 class="text-lg font-semibold text-gray-800">
-                            Historique des pointages
                         </h2>
 
-                        <p class="text-sm text-gray-500 mt-1">
-                            {{ total_records }} pointage{% if total_records != 1 %}s{% endif %}
+
+                        <p class="small text-secondary mb-0">
+
+                            {{ employee.position.position_name if employee.position else "-" }}
+
                         </p>
 
                     </div>
 
 
-                    <!-- Actions + filtres -->
-                    <div class="flex flex-col sm:flex-row
-                                sm:items-end gap-3">
+                    <!-- Informations -->
+                    <div class="card-body">
 
-                        <!-- Date début -->
-                        <div>
+                        <!-- Matricule -->
+                        <div class="mb-4">
 
-                            <label class="block text-xs font-medium text-gray-500 mb-1">
-                                Du
-                            </label>
+                            <p class="small fw-semibold text-secondary text-uppercase mb-1">
+                                Matricule
+                            </p>
 
-                            <input type="date" name="start_date" value="{{ start_date }}" form="attendance-filter"
-                                class="border border-gray-300 rounded-lg
-                                       px-3 py-2 text-sm
-                                       focus:outline-none
-                                       focus:ring-2
-                                       focus:ring-indigo-500
-                                       focus:border-indigo-500">
+                            <p class="small fw-semibold text-dark mb-0">
+                                {{ employee.emp_code }}
+                            </p>
 
                         </div>
 
 
-                        <!-- Date fin -->
-                        <div>
+                        <!-- Carte RFID -->
+                        <div class="mb-4">
 
-                            <label class="block text-xs font-medium text-gray-500 mb-1">
-                                Au
-                            </label>
+                            <p class="small fw-semibold text-secondary text-uppercase mb-1">
+                                Carte RFID
+                            </p>
 
-                            <input type="date" name="end_date" value="{{ end_date }}" form="attendance-filter" class="border border-gray-300 rounded-lg
-                                       px-3 py-2 text-sm
-                                       focus:outline-none
-                                       focus:ring-2
-                                       focus:ring-indigo-500
-                                       focus:border-indigo-500">
+                            <p class="small fw-semibold text-dark mb-0">
+                                {{ employee.card_no or "-" }}
+                            </p>
 
                         </div>
 
 
-                        <!-- Filtrer -->
-                        <button type="submit" form="attendance-filter" class="inline-flex items-center justify-center
-                                   bg-indigo-600 text-white
-                                   px-4 py-2 rounded-lg
-                                   text-sm font-medium
-                                   hover:bg-indigo-700
-                                   transition">
+                        <!-- Email -->
+                        <div class="mb-4">
 
-                            Filtrer
+                            <p class="small fw-semibold text-secondary text-uppercase mb-1">
+                                Email
+                            </p>
 
-                        </button>
+                            <p class="small text-dark text-break mb-0">
+                                {{ employee.email or "-" }}
+                            </p>
+
+                        </div>
 
 
-                        <!-- Export -->
-                        <a href="/attendance/export?emp={{ employee.id }}" class="inline-flex items-center justify-center gap-2
-                                   bg-green-600 text-white
-                                   px-4 py-2 rounded-lg
-                                   text-sm font-medium
-                                   hover:bg-green-700
-                                   transition">
+                        <!-- Téléphone -->
+                        <div class="mb-4">
 
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
+                            <p class="small fw-semibold text-secondary text-uppercase mb-1">
+                                Téléphone
+                            </p>
 
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3
-                                       M4 4h16v16H4z" />
+                            <p class="small text-dark mb-0">
+                                {{ employee.mobile or "-" }}
+                            </p>
 
+                        </div>
+
+
+                        <!-- Zones -->
+                        {% if employee.area %}
+
+                        <div class="pt-3 border-top">
+
+                            <p class="small fw-semibold text-secondary text-uppercase mb-2">
+                                Zones
+                            </p>
+
+                            <div class="d-flex flex-wrap gap-1">
+
+                                {% for a in employee.area %}
+
+                                <span class="badge rounded-pill bg-primary-subtle text-primary">
+                                    {{ a.area_name }}
+                                </span>
+
+                                {% endfor %}
+
+                            </div>
+
+                        </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <!-- Action -->
+                    <div class="card-body pt-0">
+
+                        <a
+                            href="/employees/edit/{{ employee.id }}"
+                            class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2"
+                        >
+
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                             </svg>
 
-                            Export Excel
+                            Modifier l'employé
 
                         </a>
 
@@ -266,178 +185,369 @@
 
                 </div>
 
+            </aside>
 
-                <!-- Form invisible servant uniquement à la soumission -->
-                <form id="attendance-filter" method="get" action="/employee/{{ employee.id }}">
-                </form>
-
-            </div>
+        </div>
 
 
-            <!-- Tableau -->
-            <div class="overflow-x-auto">
+        <!-- ========================================================= -->
+        <!-- HISTORIQUE -->
+        <!-- ========================================================= -->
 
-                <table class="min-w-full">
+        <div class="col-12 col-lg-8 col-xl-9">
 
-                    <thead class="bg-gray-50 border-b border-gray-100">
+            <section class="card border-0 shadow-sm">
 
-                        <tr>
+                <!-- Header -->
+                <div class="card-header bg-white border-bottom p-4">
 
-                            <th class="px-5 py-3 text-left
-                                   text-xs font-semibold text-gray-500 uppercase">
-                                Date
-                            </th>
-                            <th class="px-5 py-3 text-left
-                                   text-xs font-semibold text-gray-500 uppercase">
-                                Statut
-                            </th>
-                            <th class="px-5 py-3 text-left
-                                   text-xs font-semibold text-gray-500 uppercase">
-                                Arrivée
-                            </th>
+                    <div class="row g-3 align-items-end">
 
-                            <th class="px-5 py-3 text-left
-                                   text-xs font-semibold text-gray-500 uppercase">
-                                Départ
-                            </th>
+                        <!-- Titre -->
+                        <div class="col-12 col-xl">
 
-                            <th class="px-5 py-3 text-left
-                                   text-xs font-semibold text-gray-500 uppercase">
-                                Total
-                            </th>
+                            <h2 class="h5 fw-semibold text-dark mb-1">
+                                Historique des pointages
+                            </h2>
 
-                        </tr>
+                            <p class="small text-secondary mb-0">
 
-                    </thead>
+                                {{ total_records }}
+                                pointage{% if total_records != 1 %}s{% endif %}
+
+                            </p>
+
+                        </div>
 
 
-                    <tbody class="divide-y divide-gray-100">
+                        <!-- Actions + filtres -->
+                        <div class="col-12 col-xl-auto">
 
-                        {% for row in records %}
+                            <div class="d-flex flex-column flex-sm-row align-items-sm-end gap-2">
 
-                        <tr class="hover:bg-gray-50 transition">
+                                <!-- Date début -->
+                                <div>
 
-                            <td class="px-5 py-3.5 text-sm text-gray-700 whitespace-nowrap">
-                                {{ row.att_date }}
-                            </td>
+                                    <label
+                                        for="start_date"
+                                        class="form-label small fw-semibold text-secondary mb-1"
+                                    >
+                                        Du
+                                    </label>
 
-                            <td class="px-5 py-3.5 text-sm text-gray-700 whitespace-nowrap">
-                                <span class="px-2 py-1 rounded-full text-xs font-semibold
-                                    {% if get_attendance_status(row.clock_in) == 'Présent' %}
-                                    bg-green-100 text-green-700
-                                    {% elif get_attendance_status(row.clock_in) == 'En retard' %}
-                                    bg-yellow-100 text-yellow-700
-                                    {% else %}
-                                    bg-red-100 text-red-700
-                                    {% endif %}
-                                ">
-                                    {{ get_attendance_status(row.clock_in) }}
-                                </span>
-                            </td>
-                            <td class="px-5 py-3.5 text-sm font-mono text-gray-700">
-                                {{ row.clock_in or "-" }}
-                            </td>
-
-                            <td class="px-5 py-3.5 text-sm font-mono text-gray-700">
-                                {{ row.clock_out or "-" }}
-                            </td>
-
-                            <td class="px-5 py-3.5 text-sm font-mono font-medium text-gray-800">
-                                {{ row.total_hrs or "-" }}
-                            </td>
-
-                        </tr>
-
-                        {% else %}
-
-                        <tr>
-
-                            <td colspan="4" class="px-5 py-12 text-center">
-
-                                <div class="flex flex-col items-center">
-
-                                    <div class="w-10 h-10 rounded-full
-                                            bg-gray-100
-                                            flex items-center justify-center
-                                            text-gray-400 mb-3">
-
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor">
-
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3
-                                               M12 21a9 9 0 100-18
-                                               9 9 0 000 18z" />
-
-                                        </svg>
-
-                                    </div>
-
-                                    <p class="text-sm text-gray-500">
-                                        Aucun pointage disponible.
-                                    </p>
+                                    <input
+                                        type="date"
+                                        id="start_date"
+                                        name="start_date"
+                                        value="{{ start_date }}"
+                                        form="attendance-filter"
+                                        class="form-control form-control-sm"
+                                    >
 
                                 </div>
 
-                            </td>
 
-                        </tr>
+                                <!-- Date fin -->
+                                <div>
 
-                        {% endfor %}
+                                    <label
+                                        for="end_date"
+                                        class="form-label small fw-semibold text-secondary mb-1"
+                                    >
+                                        Au
+                                    </label>
 
-                    </tbody>
+                                    <input
+                                        type="date"
+                                        id="end_date"
+                                        name="end_date"
+                                        value="{{ end_date }}"
+                                        form="attendance-filter"
+                                        class="form-control form-control-sm"
+                                    >
 
-                </table>
-
-            </div>
-
-
-            <!-- Pagination -->
-            {% if total_pages > 1 %}
-
-            <div class="border-t border-gray-100
-                    px-5 py-4
-                    flex flex-col sm:flex-row
-                    sm:items-center sm:justify-between
-                    gap-3">
-
-                <p class="text-sm text-gray-500">
-                    Page {{ page }} sur {{ total_pages }}
-                    · {{ total_records }} pointage{% if total_records != 1 %}s{% endif %}
-                </p>
+                                </div>
 
 
-                <div class="flex items-center gap-2">
-
-                    {% if has_previous %}
-
-                    <a href="/employee/{{ employee.id }}?page={{ page - 1 }}&start_date={{ start_date }}&end_date={{ end_date }}"
-                        class="px-3 py-2 border border-gray-200
-                           rounded-lg text-sm text-gray-700
-                           hover:bg-gray-50 transition">
-                        ← Précédent
-                    </a>
-
-                    {% endif %}
+                                <!-- Filtrer -->
+                                <button
+                                    type="submit"
+                                    form="attendance-filter"
+                                    class="btn btn-primary btn-sm"
+                                >
+                                    Filtrer
+                                </button>
 
 
-                    {% if has_next %}
+                                <!-- Export -->
+                                <a
+                                    href="/attendance/export?emp={{ employee.id }}"
+                                    class="btn btn-success btn-sm d-inline-flex align-items-center gap-2"
+                                >
 
-                    <a href="/employee/{{ employee.id }}?page={{ page + 1 }}&start_date={{ start_date }}&end_date={{ end_date }}"
-                        class="px-3 py-2 border border-gray-200
-                           rounded-lg text-sm text-gray-700
-                           hover:bg-gray-50 transition">
-                        Suivant →
-                    </a>
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                    >
+                                        <path d="M12 10v6"/>
+                                        <path d="m9 13 3 3 3-3"/>
+                                        <path d="M4 4h16v16H4z"/>
+                                    </svg>
 
-                    {% endif %}
+                                    Export Excel
+
+                                </a>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Form invisible -->
+                    <form
+                        id="attendance-filter"
+                        method="get"
+                        action="/employee/{{ employee.id }}"
+                    >
+                    </form>
 
                 </div>
 
-            </div>
 
-            {% endif %}
+                <!-- ================================================= -->
+                <!-- TABLEAU -->
+                <!-- ================================================= -->
 
-        </section>
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle mb-0">
+
+                        <thead class="table-light">
+
+                            <tr>
+
+                                <th class="px-4 py-3 small text-secondary text-uppercase">
+                                    Date
+                                </th>
+
+                                <th class="px-4 py-3 small text-secondary text-uppercase">
+                                    Statut
+                                </th>
+
+                                <th class="px-4 py-3 small text-secondary text-uppercase">
+                                    Arrivée
+                                </th>
+
+                                <th class="px-4 py-3 small text-secondary text-uppercase">
+                                    Départ
+                                </th>
+
+                                <th class="px-4 py-3 small text-secondary text-uppercase">
+                                    Total
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            {% for row in records %}
+
+                            <tr>
+
+                                <!-- Date -->
+                                <td class="px-4 py-3 small text-nowrap">
+
+                                    {{ row.att_date }}
+
+                                </td>
+
+
+                                <!-- Statut -->
+                                <td class="px-4 py-3 text-nowrap">
+
+                                    {% set status = get_attendance_status(row.clock_in) %}
+
+                                    {% if status == 'Présent' %}
+
+                                    <span class="badge rounded-pill bg-success-subtle text-success">
+                                        {{ status }}
+                                    </span>
+
+                                    {% elif status == 'En retard' %}
+
+                                    <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis">
+                                        {{ status }}
+                                    </span>
+
+                                    {% else %}
+
+                                    <span class="badge rounded-pill bg-danger-subtle text-danger">
+                                        {{ status }}
+                                    </span>
+
+                                    {% endif %}
+
+                                </td>
+
+
+                                <!-- Arrivée -->
+                                <td class="px-4 py-3 small font-monospace text-nowrap">
+
+                                    {{ row.clock_in or "-" }}
+
+                                </td>
+
+
+                                <!-- Départ -->
+                                <td class="px-4 py-3 small font-monospace text-nowrap">
+
+                                    {{ row.clock_out or "-" }}
+
+                                </td>
+
+
+                                <!-- Total -->
+                                <td class="px-4 py-3 small font-monospace fw-semibold text-nowrap">
+
+                                    {{ row.total_hrs or "-" }}
+
+                                </td>
+
+                            </tr>
+
+
+                            {% else %}
+
+                            <!-- Aucun résultat -->
+                            <tr>
+
+                                <td colspan="5" class="py-5 text-center">
+
+                                    <div class="d-flex flex-column align-items-center">
+
+                                        <div
+                                            class="rounded-circle bg-light text-secondary d-flex align-items-center justify-content-center mb-3"
+                                            style="width: 42px; height: 42px;"
+                                        >
+
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="20"
+                                                height="20"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            >
+                                                <circle cx="12" cy="12" r="9"/>
+                                                <path d="M12 7v5l3 3"/>
+                                            </svg>
+
+                                        </div>
+
+                                        <p class="small text-secondary mb-0">
+                                            Aucun pointage disponible.
+                                        </p>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+                            {% endfor %}
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- PAGINATION -->
+                <!-- ================================================= -->
+
+                {% if total_pages > 1 %}
+
+                <div class="card-footer bg-white border-top px-4 py-3">
+
+                    <div class="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+
+                        <p class="small text-secondary mb-0">
+
+                            Page {{ page }} sur {{ total_pages }}
+
+                            ·
+
+                            {{ total_records }}
+                            pointage{% if total_records != 1 %}s{% endif %}
+
+                        </p>
+
+
+                        <nav>
+
+                            <ul class="pagination pagination-sm mb-0">
+
+                                {% if has_previous %}
+
+                                <li class="page-item">
+
+                                    <a
+                                        class="page-link"
+                                        href="/employee/{{ employee.id }}?page={{ page - 1 }}&start_date={{ start_date }}&end_date={{ end_date }}"
+                                    >
+                                        ← Précédent
+                                    </a>
+
+                                </li>
+
+                                {% endif %}
+
+
+                                {% if has_next %}
+
+                                <li class="page-item">
+
+                                    <a
+                                        class="page-link"
+                                        href="/employee/{{ employee.id }}?page={{ page + 1 }}&start_date={{ start_date }}&end_date={{ end_date }}"
+                                    >
+                                        Suivant →
+                                    </a>
+
+                                </li>
+
+                                {% endif %}
+
+                            </ul>
+
+                        </nav>
+
+                    </div>
+
+                </div>
+
+                {% endif %}
+
+            </section>
+
+        </div>
 
     </div>
 

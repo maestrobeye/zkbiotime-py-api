@@ -1,116 +1,139 @@
 {% extends "base.html" %}
 
-{% block title %}Employé{% endblock %}
+{% block title %}Nouvelle zone{% endblock %}
 
 {% block content %}
 
-<div class="max-w-2xl mx-auto p-6">
+<div class="container py-4">
+<div class="mx-auto" style="max-width: 700px;">
 
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">
+    <!-- Header -->
+    <div class="mb-4">
+
+        <h1 class="fs-2 fw-bold text-dark mb-1">
             Nouvelle zone
         </h1>
 
-        <p class="text-sm text-gray-500 mt-1">
+        <p class="text-secondary mb-0">
             Ajouter une nouvelle zone
         </p>
+
     </div>
 
 
-    <form
-        method="POST"
-        action="/areas/create"
-        class="bg-white rounded-xl shadow-sm border p-6 space-y-5"
-    >
+    <!-- Formulaire -->
+    <div class="card border-0 shadow-sm">
 
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                Code
-            </label>
+        <form method="POST"
+              action="/areas/create">
 
-            <input
-                type="text"
-                name="area_code"
-                required
-                class="w-full rounded-lg border border-gray-300
-                       px-3 py-2
-                       focus:border-blue-500
-                       focus:ring-blue-500"
-            >
-        </div>
+            <div class="card-body p-4 p-md-5">
 
+                <!-- Code -->
+                <div class="mb-4">
 
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                Nom
-            </label>
+                    <label for="area_code"
+                           class="form-label fw-semibold">
 
-            <input
-                type="text"
-                name="area_name"
-                required
-                class="w-full rounded-lg border border-gray-300
-                       px-3 py-2
-                       focus:border-blue-500
-                       focus:ring-blue-500"
-            >
-        </div>
+                        Code
+
+                    </label>
+
+                    <input type="text"
+                           id="area_code"
+                           name="area_code"
+                           required
+                           class="form-control"
+                           placeholder="Ex : Z001">
+
+                </div>
 
 
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-                Zone parente
-            </label>
+                <!-- Nom -->
+                <div class="mb-4">
 
-            <select
-                name="parent_area"
-                class="w-full rounded-lg border border-gray-300
-                       px-3 py-2
-                       bg-white
-                       focus:border-blue-500
-                       focus:ring-blue-500"
-            >
+                    <label for="area_name"
+                           class="form-label fw-semibold">
 
-                <option value="">
-                    Aucune
-                </option>
+                        Nom
 
-                {% for area in areas %}
+                    </label>
 
-                <option value="{{ area.id }}">
-                    {{ area.area_name }}
-                </option>
+                    <input type="text"
+                           id="area_name"
+                           name="area_name"
+                           required
+                           class="form-control"
+                           placeholder="Ex : Administration">
 
-                {% endfor %}
-
-            </select>
-        </div>
+                </div>
 
 
-        <div class="flex justify-end gap-3 pt-4">
+                <!-- Zone parente -->
+                <div class="mb-4">
 
-            <a
-                href="/zones"
-                class="px-4 py-2 border rounded-lg
-                       text-gray-700 hover:bg-gray-50"
-            >
-                Annuler
-            </a>
+                    <label for="parent_area"
+                           class="form-label fw-semibold">
 
-            <button
-                type="submit"
-                class="px-4 py-2 bg-blue-600
-                       text-white rounded-lg
-                       hover:bg-blue-700"
-            >
-                Créer
-            </button>
+                        Zone parente
 
-        </div>
+                    </label>
 
-    </form>
+                    <select id="parent_area"
+                            name="parent_area"
+                            class="form-select">
+
+                        <option value="">
+                            Aucune
+                        </option>
+
+                        {% for area in areas %}
+
+                        <option value="{{ area.id }}">
+                            {{ area.area_name }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+                    <div class="form-text">
+                        Sélectionnez une zone parente si cette zone
+                        appartient à une autre zone.
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Footer -->
+            <div class="card-footer bg-light
+                        d-flex justify-content-end
+                        gap-2 p-3">
+
+                <a href="/zones"
+                   class="btn btn-outline-secondary">
+
+                    Annuler
+
+                </a>
+
+                <button type="submit"
+                        class="btn btn-primary">
+
+                    Créer
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
 
 </div>
 
+</div>
 
 {% endblock %}

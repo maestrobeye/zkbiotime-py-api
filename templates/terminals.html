@@ -1,261 +1,442 @@
 {% extends "base.html" %}
 
-{% block title %}Employé{% endblock %}
+{% block title %}Terminaux{% endblock %}
 
 {% block content %}
 
-<div class="space-y-6">
+<div class="container-fluid px-0">
 
-    <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <!-- ========================================================= -->
+    <!-- HEADER -->
+    <!-- ========================================================= -->
+
+    <div class="d-flex flex-column flex-md-row
+                align-items-md-center justify-content-between
+                gap-3 mb-4">
 
         <div>
-            <h4 class="text-3xl font-bold text-gray-800">
+
+            <h4 class="h3 fw-bold text-dark mb-1">
                 Terminaux
             </h4>
 
-            <p class="text-gray-500">
-                Liste des pointeurs biométriques {{ terminals.count }}
+            <p class="text-secondary mb-0">
+                Liste des pointeurs biométriques
+                {{ terminals.count }}
             </p>
+
         </div>
+
+
+        <!-- Synchronisation globale -->
+        <form
+            method="POST"
+            action="/pointeurs/upload-all"
+            onsubmit="return confirm('Voulez-vous uploader les données vers tous les terminaux ?');"
+        >
+
+            <button
+                type="submit"
+                class="btn btn-primary d-inline-flex
+                       align-items-center gap-2"
+            >
+
+                <svg
+                    id="syncIcon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+
+                    <path d="M4 4v5h5"/>
+                    <path d="M20 20v-5h-5"/>
+
+                    <path d="M19.07 8.93A8 8 0 0 0 5.34 6.34L4 9"/>
+
+                    <path d="M4.93 15.07A8 8 0 0 0 18.66 17.66L20 15"/>
+
+                </svg>
+
+                Synchroniser les données aux appareils
+
+            </button>
+
+        </form>
+
     </div>
 
-    <form method="POST" action="/pointeurs/upload-all"
-        onsubmit="return confirm('Voulez-vous uploader les données vers tous les terminaux ?');">
 
-        <button type="submit" class="inline-flex items-center gap-2
-             px-4 py-2.5 rounded-lg
-             bg-indigo-600 text-white
-             text-sm font-medium
-             hover:bg-indigo-700 transition">
+    <!-- ========================================================= -->
+    <!-- LISTE DES TERMINAUX -->
+    <!-- ========================================================= -->
 
-            <svg id="syncIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
-                stroke="currentColor" class="w-5 h-5">
-
-                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5
-                   M20 20v-5h-5
-                   M19.07 8.93A8 8 0 0 0 5.34 6.34L4 9
-                   M4.93 15.07A8 8 0 0 0 18.66 17.66L20 15" />
-
-            </svg>
-            Synchroniser les données aux appareils
-
-        </button>
-
-    </form>
-
-    <!-- Liste des terminaux -->
-    <div id="terminalList" class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+    <div id="terminalList" class="row g-4">
 
         {% for terminal in terminals.data %}
 
-        <div class="terminal-card bg-white rounded-xl shadow-sm
-                    border border-gray-100
-                    hover:shadow-md transition" data-search="{{ terminal.alias }}
-                           {{ terminal.sn }}
-                           {{ terminal.ip_address }}
-                           {{ terminal.area_name }}
-                           {{ terminal.terminal_name }}">
+        <div
+            class="col-12 col-xl-6 terminal-wrapper"
+        >
 
-            <!-- Header carte -->
-            <div class="px-5 py-4 border-b border-gray-100">
+            <div
+                class="card h-100 border-0 shadow-sm terminal-card"
+                data-search="
+                    {{ terminal.alias }}
+                    {{ terminal.sn }}
+                    {{ terminal.ip_address }}
+                    {{ terminal.area_name }}
+                    {{ terminal.terminal_name }}
+                "
+            >
 
-                <div class="flex items-center justify-between">
+                <!-- ================================================= -->
+                <!-- HEADER CARTE -->
+                <!-- ================================================= -->
 
-                    <div class="flex items-center gap-3">
+                <div class="card-header bg-white border-bottom px-4 py-3">
 
-                        <!-- Icône terminal -->
-                        <div class="w-11 h-11 rounded-lg
-                                    bg-indigo-50 text-indigo-600
-                                    flex items-center justify-center">
+                    <div class="d-flex align-items-center
+                                justify-content-between gap-3">
 
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8"
-                                stroke="currentColor" class="w-6 h-6">
+                        <div class="d-flex align-items-center gap-3">
 
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 4h12a2 2 0 0 1 2 2v12
-                                         a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6
-                                         a2 2 0 0 1 2-2Z" />
+                            <!-- Icône terminal -->
+                            <div
+                                class="rounded-3 bg-primary-subtle
+                                       text-primary d-flex
+                                       align-items-center justify-content-center"
+                                style="width: 48px; height: 48px;"
+                            >
 
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 8h6
-                                         M8 12h.01
-                                         M12 12h.01
-                                         M16 12h.01
-                                         M8 16h.01
-                                         M12 16h.01
-                                         M16 16h.01" />
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="25"
+                                    height="25"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="1.8"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
 
-                            </svg>
+                                    <rect
+                                        width="16"
+                                        height="20"
+                                        x="4"
+                                        y="2"
+                                        rx="2"
+                                    />
+
+                                    <path d="M9 6h6"/>
+
+                                    <path d="M8 11h.01"/>
+                                    <path d="M12 11h.01"/>
+                                    <path d="M16 11h.01"/>
+
+                                    <path d="M8 15h.01"/>
+                                    <path d="M12 15h.01"/>
+                                    <path d="M16 15h.01"/>
+
+                                </svg>
+
+                            </div>
+
+
+                            <!-- Nom -->
+                            <div>
+
+                                <h3 class="h6 fw-semibold text-dark mb-1">
+
+                                    {{ terminal.alias }}
+
+                                </h3>
+
+                                <p class="small text-secondary mb-0">
+
+                                    {{ terminal.terminal_name }}
+
+                                </p>
+
+                            </div>
 
                         </div>
 
+
+                        <!-- État -->
+                        {% if terminal.state == "1" or terminal.state == 1 %}
+
+                        <span
+                            class="badge rounded-pill
+                                   bg-success-subtle text-success-emphasis
+                                   d-inline-flex align-items-center gap-2"
+                        >
+
+                            <span
+                                class="rounded-circle bg-success"
+                                style="width: 7px; height: 7px;"
+                            ></span>
+
+                            En ligne
+
+                        </span>
+
+
+                        {% elif terminal.state == "3" or terminal.state == 3 %}
+
+                        <span
+                            class="badge rounded-pill
+                                   bg-danger-subtle text-danger
+                                   d-inline-flex align-items-center gap-2"
+                        >
+
+                            <span
+                                class="rounded-circle bg-danger"
+                                style="width: 7px; height: 7px;"
+                            ></span>
+
+                            Hors ligne
+
+                        </span>
+
+
+                        {% else %}
+
+                        <span
+                            class="badge rounded-pill
+                                   bg-secondary-subtle text-secondary
+                                   d-inline-flex align-items-center"
+                        >
+
+                            État inconnu
+
+                        </span>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- INFORMATIONS -->
+                <!-- ================================================= -->
+
+                <div class="card-body px-4 py-4">
+
+                    <div class="row g-4">
+
+                        <!-- IP -->
+                        <div class="col-6">
+
+                            <p class="small text-secondary mb-1">
+                                Adresse IP
+                            </p>
+
+                            <p class="small fw-semibold
+                                      font-monospace text-dark mb-0">
+
+                                {{ terminal.ip_address }}
+
+                            </p>
+
+                        </div>
+
+
+                        <!-- Série -->
+                        <div class="col-6">
+
+                            <p class="small text-secondary mb-1">
+                                Numéro de série
+                            </p>
+
+                            <p class="small fw-semibold
+                                      font-monospace text-dark mb-0">
+
+                                {{ terminal.sn }}
+
+                            </p>
+
+                        </div>
+
+
+                        <!-- Zone -->
+                        <div class="col-6">
+
+                            <p class="small text-secondary mb-1">
+                                Zone
+                            </p>
+
+                            <p class="small fw-semibold text-dark mb-0">
+
+                                {{ terminal.area_name or "-" }}
+
+                            </p>
+
+                        </div>
+
+
+                        <!-- Dernière activité -->
+                        <div class="col-6">
+
+                            <p class="small text-secondary mb-1">
+                                Dernière activité
+                            </p>
+
+                            <p class="small text-dark mb-0">
+
+                                {{ terminal.last_activity or "-" }}
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- ================================================= -->
+                    <!-- STATISTIQUES -->
+                    <!-- ================================================= -->
+
+                    <div class="border-top mt-4 pt-4">
+
+                        <div class="row g-0 text-center">
+
+                            <!-- Utilisateurs -->
+                            <div class="col-4">
+
+                                <p class="h5 fw-bold text-dark mb-1">
+
+                                    {{ terminal.user_count }}
+
+                                </p>
+
+                                <p class="small text-secondary mb-0">
+                                    Utilisateurs
+                                </p>
+
+                            </div>
+
+
+                            <!-- Empreintes -->
+                            <div
+                                class="col-4 border-start border-end"
+                            >
+
+                                <p class="h5 fw-bold text-dark mb-1">
+
+                                    {{ terminal.fp_count }}
+
+                                </p>
+
+                                <p class="small text-secondary mb-0">
+                                    Empreintes
+                                </p>
+
+                            </div>
+
+
+                            <!-- Pointages -->
+                            <div class="col-4">
+
+                                <p class="h5 fw-bold text-dark mb-1">
+
+                                    {{ terminal.transaction_count }}
+
+                                </p>
+
+                                <p class="small text-secondary mb-0">
+                                    Pointages
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- FOOTER -->
+                <!-- ================================================= -->
+
+                <div class="card-footer bg-light border-0 px-4 py-3">
+
+                    <div class="d-flex flex-column
+                                flex-lg-row
+                                align-items-lg-center
+                                justify-content-between
+                                gap-3">
+
+                        <!-- Firmware -->
                         <div>
 
-                            <h3 class="font-semibold text-gray-800">
-                                {{ terminal.alias }}
-                            </h3>
-
-                            <p class="text-xs text-gray-500">
-                                {{ terminal.terminal_name }}
+                            <p class="small text-secondary mb-1">
+                                Firmware : {{ terminal.fw_ver }}
                             </p>
 
-                        </div>
-
-                    </div>
-
-
-                    {% if terminal.state == "1" or terminal.state == 1 %}
-
-                    <span class="inline-flex items-center gap-1.5
-                                 px-2.5 py-1 rounded-full
-                                 bg-green-50 text-green-700
-                                 text-xs font-medium">
-
-                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-
-                        En ligne
-
-                    </span>
-
-                    {% elif terminal.state == "3" or terminal.state == 3 %}
-
-                    <span class="inline-flex items-center gap-1.5
-                                 px-2.5 py-1 rounded-full
-                                 bg-red-50 text-red-700
-                                 text-xs font-medium">
-
-                        <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-
-                        Hors ligne
-
-                    </span>
-
-                    {% else %}
-
-                    <span class="inline-flex items-center gap-1.5
-                                 px-2.5 py-1 rounded-full
-                                 bg-gray-100 text-gray-600
-                                 text-xs font-medium">
-
-                        État inconnu
-
-                    </span>
-
-                    {% endif %}
-
-
-                </div>
-
-            </div>
-
-
-            <!-- Informations -->
-            <div class="px-5 py-4">
-
-                <div class="grid grid-cols-2 gap-4">
-
-                    <!-- IP -->
-                    <div>
-
-                        <p class="text-xs text-gray-500">
-                            Adresse IP
-                        </p>
-
-                        <p class="mt-1 text-sm font-medium
-                                  text-gray-800 font-mono">
-                            {{ terminal.ip_address }}
-                        </p>
-
-                    </div>
-
-
-                    <!-- Numéro série -->
-                    <div>
-
-                        <p class="text-xs text-gray-500">
-                            Numéro de série
-                        </p>
-
-                        <p class="mt-1 text-sm font-medium
-                                  text-gray-800 font-mono">
-                            {{ terminal.sn }}
-                        </p>
-
-                    </div>
-
-
-                    <!-- Zone -->
-                    <div>
-
-                        <p class="text-xs text-gray-500">
-                            Zone
-                        </p>
-
-                        <p class="mt-1 text-sm font-medium text-gray-800">
-                            {{ terminal.area_name or "-" }}
-                        </p>
-
-                    </div>
-
-
-                    <!-- Dernière activité -->
-                    <div>
-
-                        <p class="text-xs text-gray-500">
-                            Dernière activité
-                        </p>
-
-                        <p class="mt-1 text-sm text-gray-800">
-                            {{ terminal.last_activity or "-" }}
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                <!-- Statistiques -->
-                <div class="mt-5 pt-4 border-t border-gray-100">
-
-                    <div class="grid grid-cols-3 gap-3">
-
-                        <!-- Utilisateurs -->
-                        <div class="text-center">
-
-                            <p class="text-lg font-bold text-gray-800">
-                                {{ terminal.user_count }}
-                            </p>
-
-                            <p class="text-xs text-gray-500">
-                                Utilisateurs
+                            <p class="small text-secondary mb-0">
+                                Push : {{ terminal.push_ver }}
                             </p>
 
                         </div>
 
 
-                        <!-- Empreintes -->
-                        <div class="text-center border-x border-gray-100">
+                        <!-- Actions -->
+                        <div class="d-flex flex-wrap gap-2">
 
-                            <p class="text-lg font-bold text-gray-800">
-                                {{ terminal.fp_count }}
-                            </p>
-
-                            <p class="text-xs text-gray-500">
-                                Empreintes
-                            </p>
-
-                        </div>
+                            <!-- Modifier -->
+                            <a
+                                href="/pointeurs/{{ terminal.id }}/edit"
+                                class="btn btn-primary btn-sm"
+                            >
+                                Modifier
+                            </a>
 
 
-                        <!-- Pointages -->
-                        <div class="text-center">
+                            <!-- Redémarrer -->
+                            <form
+                                method="POST"
+                                action="/pointeurs/{{ terminal.id }}/reboot"
+                                class="m-0"
+                                onsubmit="return confirm('Voulez-vous redémarrer ce pointeur ?');"
+                            >
 
-                            <p class="text-lg font-bold text-gray-800">
-                                {{ terminal.transaction_count }}
-                            </p>
+                                <button
+                                    type="submit"
+                                    class="btn btn-warning btn-sm"
+                                >
+                                    Redémarrer
+                                </button>
 
-                            <p class="text-xs text-gray-500">
-                                Pointages
-                            </p>
+                            </form>
+
+
+                            <!-- Supprimer -->
+                            <form
+                                method="POST"
+                                action="/pointeurs/{{ terminal.id }}/delete"
+                                class="m-0"
+                                onsubmit="return confirm('Voulez-vous vraiment supprimer ce terminal ?');"
+                            >
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-danger btn-sm"
+                                >
+                                    Supprimer
+                                </button>
+
+                            </form>
 
                         </div>
 
@@ -264,74 +445,66 @@
                 </div>
 
             </div>
-
-
-            <!-- Footer -->
-            <div class="px-5 py-3 bg-gray-50
-            rounded-b-xl
-            flex items-center justify-between">
-
-                <div>
-                    <p class="text-xs text-gray-500">
-                        Firmware : {{ terminal.fw_ver }}
-                    </p>
-
-                    <p class="text-xs text-gray-500">
-                        Push : {{ terminal.push_ver }}
-                    </p>
-                </div>
-
-                <a href="/pointeurs/{{ terminal.id }}/edit" class="inline-flex items-center gap-2
-              px-3 py-2 rounded-lg
-              bg-blue-600 text-white
-              text-sm font-medium
-              hover:bg-blue-700 transition">
-
-                    Modifier
-
-                </a>
-
-                <form method="POST"  onsubmit="return confirm('Voulez-vous redémarrer ce pointeur ?');" action="/pointeurs/{{ terminal.id }}/reboot">
-
-                    <button type="submit" class="inline-flex items-center gap-2
-                           px-3 py-2 rounded-lg
-                           bg-orange-500 text-white
-                           text-sm font-medium
-                           hover:bg-orange-600 transition">
-
-                        Redémarrer
-
-                    </button>
-
-                </form>
-
-                <form method="POST" action="/pointeurs/{{ terminal.id }}/delete"
-                    onsubmit="return confirm('Voulez-vous vraiment supprimer ce terminal ?');">
-
-                    <button type="submit" class="inline-flex items-center gap-2
-                         px-3 py-2 rounded-lg
-                         bg-red-600 text-white
-                         text-sm font-medium
-                         hover:bg-red-700 transition">
-
-                        Supprimer
-
-                    </button>
-
-                </form>
-            </div>
-
-
 
         </div>
 
+
         {% else %}
 
-        <div class="lg:col-span-2 bg-white rounded-xl
-                    border border-gray-100 py-12
-                    text-center text-gray-500">
+        <!-- ========================================================= -->
+        <!-- AUCUN TERMINAL -->
+        <!-- ========================================================= -->
 
-            Aucun terminal trouvé.
+        <div class="col-12">
+
+            <div class="card border-0 shadow-sm">
+
+                <div class="card-body py-5 text-center text-secondary">
+
+                    <div
+                        class="rounded-circle bg-light
+                               d-flex align-items-center
+                               justify-content-center
+                               mx-auto mb-3"
+                        style="width: 52px; height: 52px;"
+                    >
+
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+
+                            <rect
+                                width="16"
+                                height="20"
+                                x="4"
+                                y="2"
+                                rx="2"
+                            />
+
+                            <path d="M9 6h6"/>
+                            <path d="M8 11h.01"/>
+                            <path d="M12 11h.01"/>
+                            <path d="M16 11h.01"/>
+
+                        </svg>
+
+                    </div>
+
+                    <p class="mb-0">
+                        Aucun terminal trouvé.
+                    </p>
+
+                </div>
+
+            </div>
 
         </div>
 
@@ -341,5 +514,72 @@
 
 </div>
 
+
+<!-- ============================================================= -->
+<!-- STYLE LOCAL -->
+<!-- ============================================================= -->
+
+<style>
+
+    .terminal-card {
+        transition:
+            transform .2s ease,
+            box-shadow .2s ease;
+    }
+
+    .terminal-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .10) !important;
+    }
+
+</style>
+
+
+<!-- ============================================================= -->
+<!-- SYNCHRONISATION -->
+<!-- ============================================================= -->
+
+<script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const syncForms =
+            document.querySelectorAll(
+                'form[action="/pointeurs/upload-all"]'
+            );
+
+        syncForms.forEach(function (form) {
+
+            form.addEventListener("submit", function () {
+
+                const button =
+                    form.querySelector("button");
+
+                const icon =
+                    form.querySelector("#syncIcon");
+
+                if (button) {
+
+                    button.disabled = true;
+
+                    button.innerHTML = `
+                        <span
+                            class="spinner-border spinner-border-sm"
+                            role="status"
+                            aria-hidden="true">
+                        </span>
+
+                        Synchronisation...
+                    `;
+
+                }
+
+            });
+
+        });
+
+    });
+
+</script>
 
 {% endblock %}

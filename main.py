@@ -7,6 +7,8 @@ from fastapi.responses import (
     FileResponse
 )
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
+
 from starlette.middleware.sessions import SessionMiddleware
 
 from db import get_conn
@@ -31,6 +33,28 @@ import httpx
 
 from openpyxl.styles import PatternFill
 
+from PIL import Image, ImageOps
+
+import os
+import sys
+import tempfile
+
+BIOTIME = r"C:\ZKBioTime"
+
+sys.path.insert(0, BIOTIME)
+
+os.environ.setdefault(
+    "DJANGO_SETTINGS_MODULE",
+    "mysite.settings"
+)
+
+import django
+django.setup()
+
+from django.conf import settings
+from mysite.tools.image_utils import encrypt_image
+
+
 app = FastAPI(
     title="ZKBioTime RH"
 )
@@ -48,6 +72,7 @@ app.add_middleware(
         "change-this-secret"
     )
 )
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 templates = Jinja2Templates(
@@ -419,54 +444,58 @@ def compress_photo(contents: bytes) -> bytes:
 
     return data
 
+
 @app.post("/employees/{employee_id}/photo")
 async def upload_employee_photo(
     employee_id: int,
     photo: UploadFile = File(...)
 ):
+    # --------------------------------------------------------
+    # Vérification du type
+    # --------------------------------------------------------
 
-    conn = None
+    allowed_types = {
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+    }
+
+    if photo.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail="Format d'image non supporté"
+        )
+
+    data = await photo.read()
+
+    if not data:
+        raise HTTPException(
+            status_code=400,
+            detail="Photo vide"
+        )
+
+    con = None
+    temp_path = None
+    encrypted_path = None
 
     try:
+        # ====================================================
+        # 1. Récupérer emp_code
+        # ====================================================
 
-        # ----------------------------------------------------
-        # Vérification du format
-        # ----------------------------------------------------
+        con = get_conn()
 
-        allowed_types = {
-            "image/jpeg": ".jpg",
-            "image/jpg": ".jpg",
-            "image/png": ".png"
-        }
-
-        if photo.content_type not in allowed_types:
-            raise HTTPException(
-                status_code=400,
-                detail="Format accepté : JPG ou PNG"
+        with con.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT emp_code
+                FROM personnel_employee
+                WHERE id = %s
+                """,
+                (employee_id,)
             )
 
-        extension = allowed_types[photo.content_type]
-
-        # ----------------------------------------------------
-        # Connexion PostgreSQL
-        # ----------------------------------------------------
-
-        conn = get_conn()
-
-        with conn.cursor() as cur:
-
-            cur.execute("""
-                SELECT
-                    id,
-                    emp_code,
-                    first_name,
-                    last_name,
-                    photo
-                FROM personnel_employee
-                WHERE id = %s;
-            """, (employee_id,))
-
-            employee = cur.fetchone()
+            employee = cursor.fetchone()
 
         if employee is None:
             raise HTTPException(
@@ -474,141 +503,113 @@ async def upload_employee_photo(
                 detail=f"Employé {employee_id} introuvable"
             )
 
-        emp_id = employee[0]
-        emp_code = employee[1]
-        first_name = employee[2]
-        last_name = employee[3]
-        old_photo = employee[4]
+        emp_code = employee[0]
 
-        # ----------------------------------------------------
-        # Vérifier emp_code
-        # ----------------------------------------------------
+        print("employee_id =", employee_id)
+        print("emp_code =", emp_code)
 
-        if not emp_code:
-            raise HTTPException(
-                status_code=400,
-                detail="L'employé n'a pas de emp_code"
-            )
+        # ====================================================
+        # 2. Préparer le dossier
+        # ====================================================
 
-        # ----------------------------------------------------
-        # Nom du fichier
-        #
-        # emp_code = 2
-        #
-        # => 2.jpg
-        # ----------------------------------------------------
-
-        filename = f"photo/{emp_code}{extension}"
-
-
-        # ----------------------------------------------------
-        # Construire le chemin UNIQUEMENT pour le stockage
-        # physique
-        # ----------------------------------------------------
-
-        photo_path = os.path.join(
-            PHOTO_DIRECTORY,
-            filename
+        photo_dir = os.path.join(
+            settings.BASE_DIR,
+            "auth_files",
+            "photo"
         )
 
-        # ----------------------------------------------------
-        # Vérifier que le dossier existe
-        # ----------------------------------------------------
+        os.makedirs(photo_dir, exist_ok=True)
 
-        if not os.path.isdir(PHOTO_DIRECTORY):
-            raise HTTPException(
-                status_code=500,
-                detail=(
-                    "Le dossier des photos n'existe pas : "
-                    + PHOTO_DIRECTORY
-                )
-            )
-
-        # ----------------------------------------------------
-        # Lire la photo
-        # ----------------------------------------------------
-
-        contents = await photo.read()
-
-        if not contents:
-            raise HTTPException(
-                status_code=400,
-                detail="La photo reçue est vide"
-            )
-
-        # Nom enregistré dans BioTime/PostgreSQL
-        photo_db = f"photo/{emp_code}{extension}"
-
-        # Chemin physique réel
-        photo_path = os.path.join(
-            PHOTO_DIRECTORY,
-            f"{emp_code}{extension}"
+        encrypted_path = os.path.join(
+            photo_dir,
+            f"{emp_code}.jpg"
         )
-        # ----------------------------------------------------
-        # Sauvegarder le fichier
-        # ----------------------------------------------------
 
-        if not contents:
-            raise HTTPException(
-                status_code=400,
-                detail="La photo est vide"
-            )
+        # ====================================================
+        # 3. Créer un JPEG temporaire
+        # ====================================================
 
-        compressed_photo = compress_photo(contents)
+        with tempfile.NamedTemporaryFile(
+            suffix=".jpg",
+            delete=False
+        ) as tmp:
+            temp_path = tmp.name
 
-        with open(photo_path, "wb") as image_file:
-            image_file.write(compressed_photo)
-        # with open(photo_path, "wb") as image_file:
-        #     image_file.write(contents)
+        # ====================================================
+        # 4. Compression / redimensionnement
+        # ====================================================
 
+        image = Image.open(BytesIO(data))
 
-        # ----------------------------------------------------
-        # IMPORTANT :
-        # En base, on sauvegarde UNIQUEMENT :
-        #
-        #     2.jpg
-        #
-        # PAS :
-        #
-        #     C:\ZKBioTime\auth_files\photo\2.jpg
-        # ----------------------------------------------------
+        # Corriger l'orientation EXIF
+        image = ImageOps.exif_transpose(image)
 
-        with conn.cursor() as cur:
+        # Convertir en RGB pour JPEG
+        if image.mode != "RGB":
+            image = image.convert("RGB")
 
-            cur.execute("""
+        # Maximum 320 x 320
+        image.thumbnail(
+            (320, 320),
+            Image.Resampling.LANCZOS
+        )
+
+        # Compression JPEG
+        image.save(
+            temp_path,
+            format="JPEG",
+            quality=85,
+            optimize=True
+        )
+
+        # ====================================================
+        # 5. Chiffrement ZKBioTime
+        # ====================================================
+
+        encrypted_data = encrypt_image(
+            temp_path,
+            is_path=True
+        )
+
+        # ====================================================
+        # 6. Stocker dans auth_files/photo
+        # ====================================================
+
+        with open(encrypted_path, "wb") as f:
+            f.write(encrypted_data)
+
+        print("Photo écrite :", encrypted_path)
+
+        # ====================================================
+        # 7. Mettre à jour personnel_employee.photo
+        # ====================================================
+
+        photo_path = f"photo/{emp_code}.jpg"
+
+        with con.cursor() as cursor:
+            cursor.execute(
+                """
                 UPDATE personnel_employee
-                SET
-                    photo = %s,
-                    update_time = NOW()
-                WHERE id = %s;
-            """, (
-                photo_db,
-                employee_id
-            ))
+                SET photo = %s
+                WHERE id = %s
+                """,
+                (photo_path, employee_id)
+            )
 
-        conn.commit()
+        con.commit()
 
-        # ----------------------------------------------------
-        # Vérification
-        # ----------------------------------------------------
+        # ====================================================
+        # 8. Résultat
+        # ====================================================
 
         return {
             "success": True,
-
-            "employee": {
-                "id": emp_id,
-                "emp_code": emp_code,
-                "first_name": first_name,
-                "last_name": last_name
-            },
-
-            "photo": {
-                "filename": filename,
-                "saved": os.path.exists(photo_path),
-                "size": os.path.getsize(photo_path)
-            },
-
-            "message": "Photo enregistrée avec succès"
+            "employee_id": employee_id,
+            "employee_code": emp_code,
+            "photo": photo_path,
+            "path": encrypted_path,
+            "size_original": len(data),
+            "size_encrypted": len(encrypted_data),
         }
 
     except HTTPException:
@@ -616,18 +617,33 @@ async def upload_employee_photo(
 
     except Exception as e:
 
-        if conn:
-            conn.rollback()
+        if con:
+            con.rollback()
+
+        # Si l'UPDATE échoue, supprimer le fichier créé
+        if encrypted_path and os.path.exists(encrypted_path):
+            try:
+                os.remove(encrypted_path)
+            except Exception:
+                pass
 
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur : {str(e)}"
+            detail=str(e)
         )
 
     finally:
 
-        if conn:
-            conn.close()
+        # Supprimer le JPEG temporaire
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except Exception:
+                pass
+
+        if con:
+            con.close()
+        
 @app.get("/employees/{employee_id}/photo/view")
 def view_employee_photo(employee_id: int):
 
@@ -717,7 +733,7 @@ def get_employee_photo(employee_id: int):
 
     try:
 
-        conn = get_connection()
+        conn = get_conn()
 
         with conn.cursor() as cur:
 
@@ -1465,31 +1481,10 @@ async def sync_employees(request: Request):
                 detail="Aucune zone trouvée."
             )
 
-        print("Employés :", employees)
-        print("Zones :", areas)
-
         # --------------------------------------------------
         # 2. Affecter toutes les zones à tous les employés
         # --------------------------------------------------
 
-        adjust_payload = {
-            "employees": employees,
-            "areas": areas,
-        }
-
-        print("Adjust area :", adjust_payload)
-
-        adjust_response = await client.post(
-            "http://localhost/personnel/api/employees/adjust_area/",
-            json=adjust_payload,
-            headers=headers,
-        )
-
-        if adjust_response.status_code not in (200, 201):
-            raise HTTPException(
-                status_code=adjust_response.status_code,
-                detail=adjust_response.text,
-            )
         conn=get_conn()    
         try:
                 with conn.cursor() as cur:
@@ -1528,7 +1523,6 @@ async def sync_employees(request: Request):
                 detail=f"Erreur lors de la mise à jour des zones : {exc}"
             )
 
-        print("Response Adjust Area: ",adjust_response.text)
         # --------------------------------------------------
         # 3. Resynchroniser les employés sur les terminaux
         # --------------------------------------------------
@@ -1536,9 +1530,6 @@ async def sync_employees(request: Request):
         resync_payload = {
             "employees": employees
         }
-
-        print("Resync :", resync_payload)
-
         response = await client.post(
             "http://localhost/personnel/api/employees/resync_to_device/",
             json=resync_payload,
@@ -1550,7 +1541,6 @@ async def sync_employees(request: Request):
                 status_code=response.status_code,
                 detail=response.text,
             )
-        print("Resync result test :", response.text)
 
     # --------------------------------------------------
     # Retour
