@@ -19,52 +19,68 @@
                 <div class="card border-0 shadow-sm overflow-hidden">
 
                     <!-- Identité -->
-                    <div class="card-body text-center border-bottom">
+                    <div class="position-relative mx-auto" style="width: 128px; height: 128px;">
 
                         {% if employee.photo %}
 
-                        <img
-                            src="http://localhost/{{ employee.photo }}"
+                        <img id="employeePhoto" src="http://localhost/{{ employee.photo }}"
                             alt="{{ employee.first_name }} {{ employee.last_name }}"
-                            class="rounded-circle border mx-auto d-block"
-                            style="width: 128px; height: 128px; object-fit: cover;"
-                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                        >
+                            class="rounded-circle border w-100 h-100" style="object-fit: cover;"
+                            onerror="this.style.display='none'; document.getElementById('employeeInitials').style.display='flex';">
 
-                        <div
-                            class="rounded-circle bg-primary text-white fw-bold fs-3 align-items-center justify-content-center mx-auto"
-                            style="width: 128px; height: 128px; display:none;"
-                        >
+                        <div id="employeeInitials"
+                            class="rounded-circle bg-primary text-white fw-bold fs-3 align-items-center justify-content-center w-100 h-100"
+                            style="display:none;">
                             {{ employee.first_name[0] }}{{ employee.last_name[0] }}
                         </div>
 
                         {% else %}
 
-                        <div
-                            class="rounded-circle bg-primary text-white fw-bold fs-3 d-flex align-items-center justify-content-center mx-auto"
-                            style="width: 128px; height: 128px;"
-                        >
+                        <div id="employeeInitials"
+                            class="rounded-circle bg-primary text-white fw-bold fs-3 d-flex align-items-center justify-content-center w-100 h-100">
                             {{ employee.first_name[0] }}{{ employee.last_name[0] }}
                         </div>
 
                         {% endif %}
 
 
-                        <h2 class="h5 fw-semibold text-dark mt-3 mb-1">
+                        <!-- Bouton caméra -->
+                        <button type="button"
+                            class="btn btn-light rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center"
+                            style="
+                                width: 38px;
+                                height: 38px;
+                                right: 0;
+                                bottom: 0;
+                                border: 2px solid white;
+                            " onclick="document.getElementById('photoInput').click()" title="Modifier la photo">
 
-                            {{ employee.first_name }}
-                            {{ employee.last_name }}
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path
+                                    d="M14.5 4h-5L7.5 7H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2.5z" />
+                                <circle cx="12" cy="13" r="3" />
+                            </svg>
 
-                        </h2>
-
-
-                        <p class="small text-secondary mb-0">
-
-                            {{ employee.position.position_name if employee.position else "-" }}
-
-                        </p>
+                        </button>
 
                     </div>
+                    <div class="text-center mt-3">
+
+                        <h2 class="h5 fw-semibold text-dark mb-1">
+                            {{ employee.first_name }} {{ employee.last_name }}
+                        </h2>
+                    
+                        <p class="small text-secondary mb-0">
+                            {{ employee.position.position_name if employee.position else "-" }}
+                        </p>
+                    
+                    </div>
+
+                    <!-- Input fichier caché -->
+                    <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp" class="d-none">
+
 
 
                     <!-- Informations -->
@@ -552,5 +568,144 @@
     </div>
 
 </div>
+<script>
 
+    document.getElementById("photoInput").addEventListener("change", async function () {
+    
+        const file = this.files[0];
+    
+        if (!file) {
+            return;
+        }
+    
+        // Vérification du format
+        const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+        ];
+    
+        if (!allowedTypes.includes(file.type)) {
+    
+            alert("Format d'image non supporté.");
+    
+            this.value = "";
+    
+            return;
+        }
+    
+    
+        // Taille maximale : 5 MB
+        if (file.size > 5 * 1024 * 1024) {
+    
+            alert("La photo ne doit pas dépasser 5 MB.");
+    
+            this.value = "";
+    
+            return;
+        }
+    
+    
+        // Préparation de l'envoi
+        const formData = new FormData();
+    
+        formData.append("photo", file);
+    
+    
+        try {
+    
+            const response = await fetch(
+                "/employees/{{ employee.id }}/photo",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+    
+    
+            const result = await response.json();
+    
+    
+            if (!response.ok) {
+    
+                throw new Error(
+                    result.detail || "Erreur lors de l'importation de la photo."
+                );
+            }
+    
+    
+            console.log("Photo importée :", result);
+    
+    
+            // Forcer le navigateur à recharger la nouvelle photo
+            const photoUrl =
+                "http://localhost/" +
+                result.photo +
+                "?t=" +
+                Date.now();
+    
+    
+            const initials =
+                document.getElementById("employeeInitials");
+    
+    
+            let photo =
+                document.getElementById("employeePhoto");
+    
+    
+            // Si aucune balise IMG n'existe actuellement
+            if (!photo) {
+    
+                photo = document.createElement("img");
+    
+                photo.id = "employeePhoto";
+    
+                photo.alt =
+                    "{{ employee.first_name }} {{ employee.last_name }}";
+    
+                photo.className =
+                    "rounded-circle border w-100 h-100";
+    
+                photo.style.objectFit = "cover";
+    
+    
+                initials.parentNode.insertBefore(
+                    photo,
+                    initials
+                );
+            }
+    
+    
+            photo.src = photoUrl;
+    
+            photo.style.display = "block";
+    
+    
+            if (initials) {
+                initials.style.display = "none";
+            }
+    
+    
+            alert("Photo mise à jour avec succès.");
+    
+    
+        } catch (error) {
+    
+            console.error(error);
+    
+            alert(
+                error.message ||
+                "Une erreur est survenue lors de l'importation."
+            );
+    
+        }
+    
+    
+        // Permet de sélectionner à nouveau le même fichier
+        this.value = "";
+    
+    });
+    
+    </script>
+    
 {% endblock %}

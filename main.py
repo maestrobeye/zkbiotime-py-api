@@ -80,20 +80,20 @@ templates = Jinja2Templates(
 )
 
 
-class EmployeeCreate(BaseModel):
-    emp_code: str
-    department: int
-    area: list[int]
+# class EmployeeCreate(BaseModel):
+#     emp_code: str
+#     department: int
+#     area: list[int]
 
-    hire_date: Optional[str] = None
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    gender: Optional[str] = None
-    mobile: Optional[str] = None
-    national: Optional[str] = None
-    address: Optional[str] = None
-    email: Optional[EmailStr] = None
-    app_status: Optional[int] = None
+#     hire_date: Optional[str] = None
+#     first_name: Optional[str] = None
+#     last_name: Optional[str] = None
+#     gender: Optional[str] = None
+#     mobile: Optional[str] = None
+#     national: Optional[str] = None
+#     address: Optional[str] = None
+#     email: Optional[EmailStr] = None
+#     app_status: Optional[int] = None
 
 
 def check_login(request: Request):
@@ -847,7 +847,7 @@ async def get_next_position_code(client, headers):
 
 async def create_employee(
     request: Request,
-    emp_code: Annotated[str, Form()],
+    emp_code: Annotated[int, Form()],
     area: Annotated[list[int], Form()],
     card_no: Annotated[int, Form()],
     position: Annotated[str, Form()],
@@ -919,6 +919,9 @@ async def create_employee(
                     + position_response.text
                 ),
             )
+        print("STATUS:", position_response.status_code)
+        print("CONTENT-TYPE:", position_response.headers.get("content-type"))
+        print("RESPONSE:", repr(position_response.text))
 
         position_data = position_response.json()
         
@@ -2303,3 +2306,6 @@ async def edit_area_page(
             "areas": areas,
         },
     )
+
+def format_matricule(numero):
+    return f"{int(numero):04d}/ISEP-TH"
