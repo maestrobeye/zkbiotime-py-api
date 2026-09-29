@@ -805,52 +805,15 @@ def get_employee_photo(employee_id: int):
         if conn:
             conn.close()
 
-async def get_next_position_code(client, headers):
-
-    response = await client.get(
-        "http://localhost/personnel/api/positions/",
-        headers=headers,
-        params={
-            "page_size": 1000
-        },
-    )
-
-    if response.status_code != 200:
-        raise HTTPException(
-            status_code=response.status_code,
-            detail=response.text,
-        )
-
-    data = response.json()
-
-    if isinstance(data, dict):
-        positions = (
-            data.get("data")
-            or data.get("results")
-            or []
-        )
-    else:
-        positions = data
-
-    codes = []
-
-    for position in positions:
-        try:
-            code = int(position.get("position_code"))
-            codes.append(code)
-        except (TypeError, ValueError):
-            pass
-
-    return str(max(codes, default=0) + 1)
 
 @app.post("/employees/create")
-
 async def create_employee(
     request: Request,
     emp_code: Annotated[int, Form()],
     area: Annotated[list[int], Form()],
     card_no: Annotated[int, Form()],
     position: Annotated[str, Form()],
+    dev_privilege: Annotated[int, Form()],
     first_name: Annotated[str | None, Form()] = None,
     last_name: Annotated[str | None, Form()] = None,
     mobile: Annotated[str | None, Form()] = None,
@@ -894,37 +857,11 @@ async def create_employee(
         # ==========================================
 
          # Récupérer le prochain position_code
-        position_code = await get_next_position_code(
-            client,
-            headers
-        )
-
-        # Créer la position
-        payload_position = {
-            "position_code": position_code,
-            "position_name": position,
-        }
-
-        position_response = await client.post(
-            "http://localhost/personnel/api/positions/",
-            json=payload_position,
-            headers=headers,
-        )
-
-        if position_response.status_code not in (200, 201):
-            raise HTTPException(
-                status_code=position_response.status_code,
-                detail=(
-                    "Erreur lors de la création de la position : "
-                    + position_response.text
-                ),
-            )
-        print("STATUS:", position_response.status_code)
-        print("CONTENT-TYPE:", position_response.headers.get("content-type"))
-        print("RESPONSE:", repr(position_response.text))
-
-        position_data = position_response.json()
         
+        position_id = get_or_create_position(
+        position_name=position,
+        company_id=1,
+        )        
         # ==========================================
         # 2. Créer l'employé
         # ==========================================
@@ -934,7 +871,8 @@ async def create_employee(
             "department": 1,
             "area": area,
             "card_no": card_no,
-            "position": position_data["position_code"],
+            "position": position_id,
+            "dev_privilege": dev_privilege
         }
 
         if first_name:
@@ -974,6 +912,97 @@ async def create_employee(
         url="/employees",
         status_code=303
     )
+def get_or_create_position(position_name: str, company_id: int = 1):
+    conn = get_conn()
+
+    try:
+        cursor = conn.cursor()
+
+        # ==========================================
+        # 1. Chercher une position existante
+        # ==========================================
+
+        cursor.execute(
+            """
+            SELECT id, position_code
+            FROM personnel_position
+            WHERE position_name = %s
+              AND company_id = %s
+            LIMIT 1
+            """,
+            (position_name, company_id)
+        )
+
+        row = cursor.fetchone()
+
+        if row:
+            position_id = row[0]
+            position_code = row[1]
+
+            print(
+                f"Position existante : "
+                f"id={position_id}, code={position_code}"
+            )
+
+            return position_id
+
+        # ==========================================
+        # 2. Générer le prochain position_code
+        # ==========================================
+
+        cursor.execute(
+            """
+            SELECT COALESCE(MAX(position_code::INTEGER), 0) + 1
+            FROM personnel_position
+            WHERE position_code ~ '^[0-9]+$'
+            """
+        )
+
+        position_code = str(cursor.fetchone()[0])
+
+        # ==========================================
+        # 3. Créer la position
+        # ==========================================
+
+        cursor.execute(
+            """
+            INSERT INTO personnel_position (
+                position_code,
+                position_name,
+                is_default,
+                parent_position_id,
+                company_id
+            )
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING id
+            """,
+            (
+                position_code,
+                position_name,
+                True,
+                None,
+                company_id,
+            )
+        )
+
+        position_id = cursor.fetchone()[0]
+
+        conn.commit()
+
+        print(
+            f"Nouvelle position créée : "
+            f"id={position_id}, code={position_code}"
+        )
+
+        return position_id
+
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        cursor.close()
+        conn.close()
 
 @app.get("/employees/create")
 async def get_form(request: Request):
@@ -1060,11 +1089,11 @@ async def edit_employee_page(
 async def update_employee(
     request: Request,
     employee_id: int,
-
     emp_code: Annotated[str, Form()],
     area: Annotated[list[int], Form()] = [],
     card_no: Annotated[int | None, Form()] = None,
     position: Annotated[str, Form()] = "",
+    dev_privilege: Annotated[int, Form()] = 0,
     first_name: Annotated[str | None, Form()] = None,
     last_name: Annotated[str | None, Form()] = None,
     mobile: Annotated[str | None, Form()] = None,
@@ -1108,101 +1137,25 @@ async def update_employee(
         # Gérer la position
         # ==========================================
 
-        current_position = employee.get("position")
-
-        position_code = None
-
-        # Position actuelle
-        if current_position:
-            current_position_name = current_position.get("position_name")
-            current_position_code = current_position.get("position_code")
-
-            # La position n'a pas changé
-            if position == current_position_name:
-                position_code = current_position_code
         # ==========================================
-        # Position modifiée
+        # 2. Gérer la position directement en SQL
         # ==========================================
 
-        if position_code is None:
+        position_name = position.strip()
 
-            # Récupérer les positions existantes
-            positions_response = await client.get(
-                "http://localhost/personnel/api/positions/",
-                headers=headers,
+        if not position_name:
+            raise HTTPException(
+                status_code=400,
+                detail="Le nom de la position est obligatoire."
             )
 
-            if positions_response.status_code != 200:
-                raise HTTPException(
-                    status_code=positions_response.status_code,
-                    detail=(
-                        "Erreur lors de la récupération des positions : "
-                        + positions_response.text
-                    ),
-                )
+        position_id = get_or_create_position(
+            position_name=position_name,
+            company_id=1,
+        )
 
-            data = positions_response.json()
+        print("POSITION ID:", position_id)
 
-            if isinstance(data, dict):
-                positions = (
-                    data.get("data")
-                    or data.get("results")
-                    or []
-                )
-            else:
-                positions = data
-
-            # Chercher une position existante
-            for pos in positions:
-
-                if (
-                    pos.get("position_name", "").strip().lower()
-                    == position.strip().lower()
-                ):
-                    position_code = pos.get("position_code")
-                    break
-
-        # ==========================================
-        # Position inexistante → créer
-        # ==========================================
-
-        if position_code is None:
-
-            position_code = await get_next_position_code(
-                client,
-                headers
-            )
-
-            payload_position = {
-                "position_code": position_code,
-                "position_name": position.strip(),
-            }
-
-            position_response = await client.post(
-                "http://localhost/personnel/api/positions/",
-                json=payload_position,
-                headers=headers,
-            )
-
-            if position_response.status_code not in (200, 201):
-
-                raise HTTPException(
-                    status_code=position_response.status_code,
-                    detail=(
-                        "Erreur lors de la création de la position : "
-                        + position_response.text
-                    ),
-                )
-
-            position_data = position_response.json()
-
-            position_code = position_data["position_code"]
-
-
-            # Utiliser le code retourné par l'API
-            position_data = position_response.json()
-
-            position_code = position_data["position_code"]
 
         # ==========================================
         # 4. Préparer le payload employé
@@ -1213,7 +1166,8 @@ async def update_employee(
             "department": 1,
             "area": area,
             "card_no": card_no,
-            "position": position_code,
+            "position": position_id,
+            "dev_privilege": dev_privilege
         }
         
         if first_name:

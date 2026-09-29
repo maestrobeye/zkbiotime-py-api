@@ -171,7 +171,39 @@
                         </div>
 
                     </div>
-
+                    
+                    <div class="form-group">
+                        <label for="dev_privilege">Privilège du périphérique</label>
+                    
+                        <select class="form-control" name="dev_privilege" id="dev_privilege">
+                    
+                            <option value="0"
+                                {% if employee.dev_privilege == 0 %}selected{% endif %}>
+                                Employé
+                            </option>
+                    
+                            <option value="2"
+                                {% if employee.dev_privilege == 2 %}selected{% endif %}>
+                                Enregistrer
+                            </option>
+                    
+                            <option value="6"
+                                {% if employee.dev_privilege == 6 %}selected{% endif %}>
+                                Administrateur Système
+                            </option>
+                    
+                            <option value="10"
+                                {% if employee.dev_privilege == 10 %}selected{% endif %}>
+                                Utilisateur défini
+                            </option>
+                    
+                            <option value="14"
+                                {% if employee.dev_privilege == 14 %}selected{% endif %}>
+                                Super administrateur
+                            </option>
+                    
+                        </select>
+                    </div>
                 </div>
 
 
