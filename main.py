@@ -54,6 +54,8 @@ django.setup()
 from django.conf import settings
 from mysite.tools.image_utils import encrypt_image
 
+from psycopg2.errors import UniqueViolation
+
 
 app = FastAPI(
     title="ZKBioTime RH"
@@ -147,7 +149,6 @@ def login(
         }
     )
 
-
     if response.status_code != 200:
         return templates.TemplateResponse(
             name="login.html",
@@ -158,11 +159,7 @@ def login(
             }
         )
 
-
     data = response.json()
-
-    # Exemple ZK:
-    # {"token":"xxxx"}
 
     token = data.get("token")
 
@@ -177,10 +174,8 @@ def login(
             }
         )
 
-
     request.session["user"] = username
     request.session["zk_token"] = token
-
 
     return RedirectResponse(
         "/",
@@ -1040,7 +1035,9 @@ async def edit_employee_page(
         "Content-Type": "application/json",
         "X-API-Key": "1234",
     }
-
+    error = request.session.pop("error", None)
+    success = request.session.pop("success", None)
+    
     async with httpx.AsyncClient(timeout=30) as client:
         employee_response, area_response = await asyncio.gather(
             client.get(
@@ -1073,15 +1070,17 @@ async def edit_employee_page(
     area = area_response.json()
 
     employee_area_ids = [a["id"] for a in employee.get("area", [])]
-
+    print(error)
+    print(success)
     return templates.TemplateResponse(
         request=request,
         name="employee_edit.html",
         context={
-            "request": request,
             "employee": employee,
             "area": area,
             "employee_area_ids": employee_area_ids,
+            "error": error,
+            "success": success,
         },
     )
 
@@ -1132,10 +1131,6 @@ async def update_employee(
             )
 
         employee = employee_response.json()
-
-        # ==========================================
-        # Gérer la position
-        # ==========================================
 
         # ==========================================
         # 2. Gérer la position directement en SQL
@@ -1191,18 +1186,40 @@ async def update_employee(
                 UPDATE personnel_employee
                 SET emp_code = %s 
                 WHERE id = %s
-                """, (emp_code, employee_id)
+                """,
+                (emp_code, employee_id)
             )
 
             conn.commit()
 
-        except Exception:
+        except UniqueViolation:
             conn.rollback()
-            raise
+
+            request.session["error"] = (
+                f"Le matricule « {emp_code} » existe déjà."
+            )
+
+            return RedirectResponse(
+                url=f"/employees/edit/{employee_id}",
+                status_code=303,
+            )
+
+        except Exception as e:
+            conn.rollback()
+
+            request.session["error"] = (
+                f"Erreur lors de la modification : {str(e)}"
+            )
+
+            return RedirectResponse(
+                url=f"/employees/edit/{employee_id}",
+                status_code=303,
+            )
 
         finally:
             cur.close()
             conn.close()
+
         # ==========================================
         # 5. Mise à jour de l'employé
         # ==========================================
@@ -1222,15 +1239,17 @@ async def update_employee(
                 ),
             )
 
-
     # ==========================================
     # 6. Retour vers la liste
     # ==========================================
-
+    request.session["success"] = (
+    "L'employé a été modifié avec succès."
+)
     return RedirectResponse(
-        url="/employees",
+        url=f"/employees/edit/{employee_id}",
         status_code=303,
     )
+
 
 # -----------------------------
 # DETAIL EMPLOYEE

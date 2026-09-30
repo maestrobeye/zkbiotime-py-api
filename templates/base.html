@@ -8,8 +8,8 @@
     <title>{% block title %}ZKBioTime RH{% endblock %}</title>
 
     <!-- Bootstrap CSS LOCAL -->
+    <script src="/static/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="/static/css/bootstrap.min.css">
-
     <style>
         body {
             font-family: Inter, Arial, sans-serif;
@@ -438,6 +438,10 @@
          FILTRE PAR PÉRIODE
     =========================================== -->
 
+    <!-- ==========================================
+     FILTRE PAR PÉRIODE
+=========================================== -->
+
     <script>
 
         const periode = document.getElementById('periode');
@@ -472,6 +476,10 @@
 
                 switch (this.value) {
 
+                    // ==========================================
+                    // AUJOURD'HUI
+                    // ==========================================
+
                     case "Aujourd'hui":
 
                         start = new Date(today);
@@ -479,6 +487,10 @@
 
                         break;
 
+
+                    // ==========================================
+                    // HIER
+                    // ==========================================
 
                     case "Hier":
 
@@ -492,6 +504,11 @@
 
                         break;
 
+
+                    // ==========================================
+                    // CETTE SEMAINE
+                    // Lundi -> Dimanche
+                    // ==========================================
 
                     case "Cette semaine":
 
@@ -515,6 +532,44 @@
                         break;
 
 
+                    // ==========================================
+                    // SEMAINE DERNIÈRE
+                    // Lundi -> Dimanche
+                    // ==========================================
+
+                    case "Semaine dernière":
+
+                        start = new Date(today);
+
+                        const currentDay = today.getDay();
+
+                        const currentDiff =
+                            currentDay === 0 ? 6 : currentDay - 1;
+
+                        // Lundi de cette semaine
+                        start.setDate(
+                            today.getDate() - currentDiff
+                        );
+
+                        // Lundi de la semaine dernière
+                        start.setDate(
+                            start.getDate() - 7
+                        );
+
+                        // Dimanche de la semaine dernière
+                        end = new Date(start);
+
+                        end.setDate(
+                            start.getDate() + 6
+                        );
+
+                        break;
+
+
+                    // ==========================================
+                    // CE MOIS
+                    // ==========================================
+
                     case "Ce mois":
 
                         start = new Date(
@@ -532,6 +587,44 @@
                         break;
 
 
+                    // ==========================================
+                    // TROIS DERNIERS MOIS
+                    // ==========================================
+
+                    case "Trois derniers mois":
+
+                        start = new Date(
+                            today.getFullYear(),
+                            today.getMonth() - 2,
+                            1
+                        );
+
+                        end = new Date(today);
+
+                        break;
+
+
+                    // ==========================================
+                    // SIX DERNIERS MOIS
+                    // ==========================================
+
+                    case "Six derniers mois":
+
+                        start = new Date(
+                            today.getFullYear(),
+                            today.getMonth() - 5,
+                            1
+                        );
+
+                        end = new Date(today);
+
+                        break;
+
+
+                    // ==========================================
+                    // CETTE ANNÉE
+                    // ==========================================
+
                     case "Cette année":
 
                         start = new Date(
@@ -548,6 +641,10 @@
 
                         break;
 
+
+                    // ==========================================
+                    // PAR DÉFAUT
+                    // ==========================================
 
                     default:
 
@@ -653,7 +750,6 @@
         }
 
     </script>
-
 
 </body>
 
