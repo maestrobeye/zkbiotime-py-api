@@ -1068,10 +1068,8 @@ async def edit_employee_page(
 
     employee = employee_response.json()
     area = area_response.json()
-
     employee_area_ids = [a["id"] for a in employee.get("area", [])]
-    print(error)
-    print(success)
+  
     return templates.TemplateResponse(
         request=request,
         name="employee_edit.html",
@@ -1091,6 +1089,7 @@ async def update_employee(
     emp_code: Annotated[str, Form()],
     area: Annotated[list[int], Form()] = [],
     card_no: Annotated[int | None, Form()] = None,
+    device_password: Annotated[int | None, Form()] = None,
     position: Annotated[str, Form()] = "",
     dev_privilege: Annotated[int, Form()] = 0,
     first_name: Annotated[str | None, Form()] = None,
@@ -1162,7 +1161,8 @@ async def update_employee(
             "area": area,
             "card_no": card_no,
             "position": position_id,
-            "dev_privilege": dev_privilege
+            "dev_privilege": dev_privilege,
+            "device_password": device_password
         }
         
         if first_name:

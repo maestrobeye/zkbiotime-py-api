@@ -12,15 +12,15 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
             {% endif %}
-            
+
             {% if success %}
             <div class="alert alert-success alert-dismissible fade show" role="alert">
                 {{ success }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
             {% endif %}
-            
-            
+
+
             <!-- Formulaire -->
             <form method="POST" action="/employees/edit/{{ employee.id }}" class="bg-white border rounded-3 shadow-sm">
 
@@ -118,10 +118,6 @@
                             <h2 class="h5 fw-semibold text-dark mb-1">
                                 Informations personnelles
                             </h2>
-
-                            <p class="text-muted small mb-0">
-                                Coordonnées personnelles de l'agent.
-                            </p>
                         </div>
 
                         <div class="row g-4">
@@ -135,7 +131,6 @@
 
                                 <input type="text" id="first_name" name="first_name"
                                     value="{{ employee.first_name or '' }}" class="form-control">
-
                             </div>
 
 
@@ -177,41 +172,45 @@
 
                             </div>
 
+                        <div class="col-6 col-md-6">
+                            <div class="form-group">
+                                <label for="dev_privilege">Privilège du périphérique</label>
+
+                                <select class="form-control" name="dev_privilege" id="dev_privilege">
+
+                                    <option value="0" {% if employee.dev_privilege==0 %}selected{% endif %}>
+                                        Employé
+                                    </option>
+
+                                    <option value="2" {% if employee.dev_privilege==2 %}selected{% endif %}>
+                                        Enregistrer
+                                    </option>
+
+                                    <option value="6" {% if employee.dev_privilege==6 %}selected{% endif %}>
+                                        Administrateur Système
+                                    </option>
+
+                                    <option value="10" {% if employee.dev_privilege==10 %}selected{% endif %}>
+                                        Utilisateur défini
+                                    </option>
+
+                                    <option value="14" {% if employee.dev_privilege==14 %}selected{% endif %}>
+                                        Super administrateur
+                                    </option>
+
+                                </select>
+                            </div>
                         </div>
 
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="dev_privilege">Privilège du périphérique</label>
-                    
-                        <select class="form-control" name="dev_privilege" id="dev_privilege">
-                    
-                            <option value="0"
-                                {% if employee.dev_privilege == 0 %}selected{% endif %}>
-                                Employé
-                            </option>
-                    
-                            <option value="2"
-                                {% if employee.dev_privilege == 2 %}selected{% endif %}>
-                                Enregistrer
-                            </option>
-                    
-                            <option value="6"
-                                {% if employee.dev_privilege == 6 %}selected{% endif %}>
-                                Administrateur Système
-                            </option>
-                    
-                            <option value="10"
-                                {% if employee.dev_privilege == 10 %}selected{% endif %}>
-                                Utilisateur défini
-                            </option>
-                    
-                            <option value="14"
-                                {% if employee.dev_privilege == 14 %}selected{% endif %}>
-                                Super administrateur
-                            </option>
-                    
-                        </select>
+                        <div class="col-6 col-md-6">
+                            <div class="form-group">
+                                <label for="device_password">Mot de passe sur les pointeurs</label>
+                                <input type="password" class="form-control" name="device_password" value="{{employee.device_password or ""}}" id="device_password">
+                            </div>
+                        </div>
+
+                        </div>
+
                     </div>
                 </div>
 

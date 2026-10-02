@@ -8,69 +8,111 @@ conn = psycopg2.connect(
     password="mon_mot_de_passe"
 )
 
-with conn.cursor() as cur:
+cur = conn.cursor()
 
-    # ==================================================
-    # 1. Structure de la table
-    # ==================================================
+date_autorisee = "20260709"
+date_expiration = "20260907"
 
-    cur.execute("""
-        SELECT
-            column_name,
-            data_type,
-            is_nullable,
-            column_default
-        FROM information_schema.columns
-        WHERE table_schema = 'public'
-          AND table_name = 'sync_employee'
-        ORDER BY ordinal_position;
-    """)
+# Formats possibles dans PostgreSQL
+formats_autorisee = [
+    "20260709",
+    "2026-07-09",
+    "2026-07-09 00:00:00",
+]
 
-    columns = cur.fetchall()
+formats_expiration = [
+    "20260907",
+    "2026-09-07",
+    "2026-09-07 00:00:00",
+]
 
-    print("Structure de la table sync_employee :")
-    print("-" * 80)
+# Récupérer toutes les colonnes utilisables
+cur.execute("""
+    SELECT table_schema, table_name, column_name, data_type
+    FROM information_schema.columns
+    WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
+      AND data_type IN (
+          'character varying',
+          'character',
+          'text',
+          'integer',
+          'bigint',
+          'smallint',
+          'numeric',
+          'date',
+          'timestamp without time zone',
+          'timestamp with time zone'
+      )
+    ORDER BY table_schema, table_name, ordinal_position;
+""")
 
-    for col in columns:
-        print(f"Colonne : {col[0]}")
-        print(f"  Type      : {col[1]}")
-        print(f"  Nullable  : {col[2]}")
-        print(f"  Défaut    : {col[3]}")
-        print()
+colonnes = cur.fetchall()
+
+# Regrouper les colonnes par table
+tables = {}
+
+for schema, table, colonne, data_type in colonnes:
+    key = (schema, table)
+
+    if key not in tables:
+        tables[key] = []
+
+    tables[key].append((colonne, data_type))
 
 
-    # ==================================================
-    # 2. Voir les données de la table
-    # ==================================================
+trouves = 0
 
-    cur.execute("""
-      SELECT
-            tc.table_schema,
-            tc.table_name,
-            tc.constraint_name,
-            kcu.column_name,
-            ccu.table_schema AS foreign_table_schema,
-            ccu.table_name AS foreign_table_name,
-            ccu.column_name AS foreign_column_name
-        FROM information_schema.table_constraints AS tc
-        JOIN information_schema.key_column_usage AS kcu
-            ON tc.constraint_name = kcu.constraint_name
-            AND tc.table_schema = kcu.table_schema
-        JOIN information_schema.constraint_column_usage AS ccu
-            ON ccu.constraint_name = tc.constraint_name
-            AND ccu.table_schema = tc.table_schema
-        WHERE tc.constraint_type = 'FOREIGN KEY'
-        AND ccu.table_schema = 'public'
-        AND ccu.table_name = 'sync_employee'
-        AND ccu.column_name = 'id';
-    """)
+for (schema, table), cols in tables.items():
 
-    rows = cur.fetchall()
+    # On teste toutes les paires de colonnes
+    for colonne1, type1 in cols:
+        for colonne2, type2 in cols:
 
-    print("\nDonnées de sync_employee :")
-    print("-" * 80)
+            if colonne1 == colonne2:
+                continue
 
-    for row in rows:
-        print(row)
+            s = '"' + schema.replace('"', '""') + '"'
+            t = '"' + table.replace('"', '""') + '"'
+            c1 = '"' + colonne1.replace('"', '""') + '"'
+            c2 = '"' + colonne2.replace('"', '""') + '"'
 
+            try:
+
+                requete = f"""
+                    SELECT *
+                    FROM {s}.{t}
+                    WHERE CAST({c1} AS TEXT) = ANY(%s)
+                      AND CAST({c2} AS TEXT) = ANY(%s)
+                    LIMIT 20;
+                """
+
+                cur.execute(
+                    requete,
+                    (formats_autorisee, formats_expiration)
+                )
+
+                resultats = cur.fetchall()
+
+                if resultats:
+                    trouves += len(resultats)
+
+                    print("\n" + "=" * 100)
+                    print(f"TABLE : {schema}.{table}")
+                    print(f"DATE AUTORISÉE : {colonne1}")
+                    print(f"DATE EXPIRATION : {colonne2}")
+                    print(f"RÉSULTATS : {len(resultats)}")
+                    print("=" * 100)
+
+                    for ligne in resultats:
+                        print(ligne)
+
+            except Exception as e:
+                conn.rollback()
+
+print("\n" + "=" * 100)
+print(f"Recherche terminée.")
+print(f"Nombre de résultats trouvés : {trouves}")
+print("=" * 100)
+
+cur.close()
 conn.close()
