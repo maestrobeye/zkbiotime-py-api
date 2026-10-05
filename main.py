@@ -268,7 +268,8 @@ async def dashboard(request: Request):
         context={
             "employees": employees,
             "punches": data.get("data", []),
-            "online_devices": online_devices
+            "online_devices": online_devices,
+            "page_title": "Tableau de bord"
         }
     )
 
@@ -362,6 +363,7 @@ def employees_page(
                 "total_pages": total_pages,
                 "has_previous": page > 1,
                 "has_next": page < total_pages,
+                "page_title": "Agents"
             }
         )
 
@@ -1250,7 +1252,6 @@ async def update_employee(
         status_code=303,
     )
 
-
 # -----------------------------
 # DETAIL EMPLOYEE
 # -----------------------------
@@ -1599,6 +1600,7 @@ async def attendance_page(
             "page_size": page_size,
             "start_date": start_date,
             "end_date": end_date,
+            "page_title": "Pointages"
         },
     )
 
@@ -1654,6 +1656,157 @@ async def attendance_export(
             "Prénom": record.get("first_name"),
             "Nom": record.get("last_name"),
             "Date": record.get("att_date"),
+            "Jour": record.get("weekday"),
+            "Entrée": record.get("clock_in"),
+            "Sortie": record.get("clock_out"),
+            "Durée": record.get("total_hrs"),
+            "Statut":get_attendance_status(record),
+        })
+
+    # Transformer en DataFrame
+    df = pd.DataFrame(selected_records)
+
+    # Supprimer les timezones des colonnes datetime
+    for col in df.select_dtypes(include=["datetimetz"]).columns:
+        df[col] = df[col].dt.tz_localize(None)
+
+    # Créer le fichier Excel en mémoire
+    output = BytesIO()
+
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        df.to_excel(
+            writer,
+            index=False,
+            sheet_name="Attendance"
+        )
+        
+        worksheet = writer.sheets["Attendance"]
+
+        green_fill = PatternFill(
+            fill_type="solid",
+            fgColor="00B050"
+        )
+
+        red_fill = PatternFill(
+            fill_type="solid",
+            fgColor="FF0000"
+        )
+        
+        yellow_fill = PatternFill(
+            fill_type="solid",
+            fgColor="FFD966"
+        )
+
+
+        # Trouver la colonne "Statut"
+        statut_col = df.columns.get_loc("Statut") + 1
+
+        duree_col = df.columns.get_loc("Durée") + 1
+
+        for row in range(2, worksheet.max_row + 1):
+            cell = worksheet.cell(row=row, column=statut_col)
+
+            if cell.value == "Présent":
+                cell.fill = green_fill
+
+            elif cell.value == "Absent":
+                cell.fill = red_fill
+            # -------------------------
+            # Couleur de la durée
+            # -------------------------
+            duree_cell = worksheet.cell(
+                row=row,
+                column=duree_col
+            )
+
+            duree = duree_cell.value
+
+            if duree:
+                try:
+                    heures, minutes = map(int, str(duree).split(":"))
+
+                    total_minutes = heures * 60 + minutes
+
+                    if total_minutes >= 8 * 60:
+                        duree_cell.fill = green_fill
+                    else:
+                        duree_cell.fill = yellow_fill
+
+                except (ValueError, AttributeError):
+                    pass
+    output.seek(0)
+
+    filename = (
+        f"attendance_{start_date.isoformat()}_"
+        f"{end_date.isoformat()}.xlsx"
+    )
+
+    print(records)
+
+    return StreamingResponse(
+        output,
+        media_type=(
+            "application/vnd.openxmlformats-officedocument"
+            ".spreadsheetml.sheet"
+        ),
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"'
+        },
+    )
+
+@app.get("/attendanceForSingle/export")
+async def attendance_export(
+    request: Request,
+    emp_id: int,
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
+):
+    print(start_date)
+    # Dates par défaut : année en cours
+    today = date.today()
+
+    if start_date is None:
+        start_date = date(today.year, 1, 1)
+
+    if end_date is None:
+        end_date = date(today.year, 12, 31)
+
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.get(
+            ATT_API_URL,
+            params={
+                "employees": [emp_id],
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "page_size": 300,
+                "page": 1,
+                "departments": -1,
+                "areas": -1,
+                "groups": -1,
+            },
+            headers={
+                "Authorization": f"Token {request.session['zk_token']}",
+                "X-API-Key": "1234",
+            },
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(response.status_code, response.text)
+
+    data = response.json()
+
+    records = data.get("data", [])
+    
+    selected_records = []
+
+    for record in records:
+        selected_records.append({
+            "Matricule": record.get("emp_code"),
+            "Prénom": record.get("first_name"),
+            "Nom": record.get("last_name"),
+            "Date": record.get("att_date"),
+            "Jour": record.get("weekday"),
             "Entrée": record.get("clock_in"),
             "Sortie": record.get("clock_out"),
             "Durée": record.get("total_hrs"),
@@ -1801,7 +1954,8 @@ async def get_terminals(request: Request):
         request=request,
         name="terminals.html",
         context={
-          "terminals": response.json()
+          "terminals": response.json(),
+          "page_title": "Appareils"
         },
     )
 
@@ -1851,7 +2005,7 @@ async def edit_terminal_form(
         name="terminal_edit.html",
         context={
             "terminal": terminal,
-            "areas" : areas["data"]
+            "areas" : areas["data"],
         },
     )
 
@@ -2118,6 +2272,7 @@ async def areas_page(
        context= {
             "areas": areas,
             "total_pages": total_pages,
+            "page_title": "Zones"
         },
     )
 @app.get("/areas/create")

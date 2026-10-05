@@ -7,404 +7,350 @@ Pointages
 {% block content %}
 
 <div class="container-fluid py-1">
-<!-- Header -->
-<div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+    <!-- Filtres -->
+    <div class="card border-0 shadow-sm mb-4">
 
-    <div>
-        <h4 class="fs-2 fw-bold text-dark mb-1">
-            Historique des pointages
-        </h4>
+        <div class="card-body">
 
-        <p class="text-secondary mb-0">
-            Suivi des entrées et sorties des employés
-        </p>
-    </div>
+            <form method="get" action="/attendance" class="row g-3 align-items-center">
 
-    <a id="exportExcel"
-       href="#"
-       class="btn btn-success d-inline-flex align-items-center gap-2">
+                <div class="col-12 col-md-auto">
 
-        <svg xmlns="http://www.w3.org/2000/svg"
-             width="18"
-             height="18"
-             fill="none"
-             viewBox="0 0 24 24"
-             stroke="currentColor"
-             stroke-width="2">
+                    <span class="fw-semibold text-dark">
+                        Filtrer par :
+                    </span>
 
-            <path stroke-linecap="round"
-                  stroke-linejoin="round"
-                  d="M12 10v6m0 0l-3-3m3 3l3-3
+                </div>
+
+
+                <!-- Sélection rapide -->
+                <div class="col-12 col-md-auto">
+
+                    <select name="periode" id="periode" class="form-select">
+
+                        <option value="">
+                            Choisir une période
+                        </option>
+
+                        <option value="Aujourd'hui">
+                            Aujourd'hui
+                        </option>
+
+                        <option value="Hier">
+                            Hier
+                        </option>
+
+                        <option value="Cette semaine">
+                            Cette semaine
+                        </option>
+
+                        <option value="Semaine dernière">
+                            Semaine dernière
+                        </option>
+
+                        <option value="Ce mois">
+                            Ce mois
+                        </option>
+
+                        <option value="Cette année">
+                            Cette année
+                        </option>
+                        <option value="Trois derniers mois">
+                            Trois derniers mois
+                        </option>
+
+                        <option value="Six derniers mois">
+                            Six derniers mois
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- Date début -->
+                <div class="col-12 col-md-auto">
+
+                    <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control">
+
+                </div>
+
+
+                <!-- Date fin -->
+                <div class="col-12 col-md-auto">
+
+                    <input type="date" id="end_date" name="end_date" value="{{ end_date }}" class="form-control">
+
+                </div>
+
+
+                <!-- Filtrer -->
+                <div class="col-12 col-md-auto">
+
+                    <button type="submit" class="btn btn-primary">
+
+                        Filtrer
+
+                    </button>
+
+                    <a id="exportExcel" href="#" class="btn btn-success d-inline-flex align-items-center gap-2">
+
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="2">
+
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3
                      M4 4h16v16H4z" />
 
-        </svg>
+                        </svg>
+                        Exporter Excel
+                    </a>
 
-        Exporter Excel
-
-    </a>
-
-</div>
+                </div>
 
 
-<!-- Filtres -->
-<div class="card border-0 shadow-sm mb-4">
-
-    <div class="card-body">
-
-        <form method="get"
-              action="/attendance"
-              class="row g-3 align-items-center">
-
-            <div class="col-12 col-md-auto">
-
-                <span class="fw-semibold text-dark">
-                    Filtrer par :
-                </span>
-
-            </div>
-
-
-            <!-- Sélection rapide -->
-            <div class="col-12 col-md-auto">
-
-                <select name="periode"
-                        id="periode"
-                        class="form-select">
-
-                    <option value="">
-                        Choisir une période
-                    </option>
-
-                    <option value="Aujourd'hui">
-                        Aujourd'hui
-                    </option>
-
-                    <option value="Hier">
-                        Hier
-                    </option>
-
-                    <option value="Cette semaine">
-                        Cette semaine
-                    </option>
-
-                    <option value="Semaine dernière">
-                        Semaine dernière
-                    </option>
-
-                    <option value="Ce mois">
-                        Ce mois
-                    </option>
-
-                    <option value="Cette année">
-                        Cette année
-                    </option>
-                    <option value="Trois derniers mois">
-                        Trois derniers mois
-                    </option>
-                
-                    <option value="Six derniers mois">
-                        Six derniers mois
-                    </option>
-                
-                </select>
-
-            </div>
-
-
-            <!-- Date début -->
-            <div class="col-12 col-md-auto">
-
-                <input type="date"
-                       id="start_date"
-                       name="start_date"
-                       value="{{ start_date }}"
-                       class="form-control">
-
-            </div>
-
-
-            <!-- Date fin -->
-            <div class="col-12 col-md-auto">
-
-                <input type="date"
-                       id="end_date"
-                       name="end_date"
-                       value="{{ end_date }}"
-                       class="form-control">
-
-            </div>
-
-
-            <!-- Filtrer -->
-            <div class="col-12 col-md-auto">
-
-                <button type="submit"
-                        class="btn btn-primary">
-
-                    Filtrer
-
-                </button>
-
-            </div>
-
-
-            <!-- Réinitialiser -->
-            {% if request.query_params.get('start_date')
+                <!-- Réinitialiser -->
+                {% if request.query_params.get('start_date')
                 or request.query_params.get('end_date') %}
 
-            <div class="col-12 col-md-auto">
+                <div class="col-12 col-md-auto">
 
-                <a href="/attendance"
-                   class="btn btn-outline-secondary">
+                    <a href="/attendance" class="btn btn-outline-secondary">
 
-                    Réinitialiser
+                        Réinitialiser
 
-                </a>
+                    </a>
 
-            </div>
+                </div>
 
-            {% endif %}
+                {% endif %}
 
-        </form>
+            </form>
+
+        </div>
 
     </div>
 
-</div>
+
+    <!-- Tableau -->
+    <div class="card border-0 shadow-sm">
+
+        <div class="table-responsive">
+
+            <table class="table table-hover align-middle mb-0">
+
+                <thead class="table-light">
+
+                    <tr>
+
+                        <th class="px-4 py-3 text-uppercase small fw-semibold">
+                            Agent
+                        </th>
+
+                        <th class="px-4 py-3 text-uppercase small fw-semibold">
+                            Date
+                        </th>
+
+                        <th class="px-4 py-3 text-uppercase small fw-semibold">
+                            Jour de la semaine
+                        </th>
+
+                        <th class="px-4 py-3 text-uppercase small fw-semibold">
+                            Statut
+                        </th>
+
+                        <th class="px-4 py-3 text-uppercase small fw-semibold">
+                            Arrivée
+                        </th>
+
+                        <th class="px-4 py-3 text-uppercase small fw-semibold">
+                            Départ
+                        </th>
+
+                        <th class="px-4 py-3 text-uppercase small fw-semibold">
+                            Total
+                        </th>
+
+                    </tr>
+
+                </thead>
 
 
-<!-- Tableau -->
-<div class="card border-0 shadow-sm">
+                <tbody>
 
-    <div class="table-responsive">
+                    {% for row in records %}
 
-        <table class="table table-hover align-middle mb-0">
+                    <tr>
 
-            <thead class="table-light">
+                        <!-- Employé -->
+                        <td class="px-4 py-3">
 
-                <tr>
+                            <div class="d-flex align-items-center gap-3">
 
-                    <th class="px-4 py-3 text-uppercase small fw-semibold">
-                        Agent
-                    </th>
-
-                    <th class="px-4 py-3 text-uppercase small fw-semibold">
-                        Date
-                    </th>
-
-                    <th class="px-4 py-3 text-uppercase small fw-semibold">
-                        Jour de la semaine
-                    </th>
-
-                    <th class="px-4 py-3 text-uppercase small fw-semibold">
-                        Statut
-                    </th>
-
-                    <th class="px-4 py-3 text-uppercase small fw-semibold">
-                        Arrivée
-                    </th>
-
-                    <th class="px-4 py-3 text-uppercase small fw-semibold">
-                        Départ
-                    </th>
-
-                    <th class="px-4 py-3 text-uppercase small fw-semibold">
-                        Total
-                    </th>
-
-                </tr>
-
-            </thead>
-
-
-            <tbody>
-
-                {% for row in records %}
-
-                <tr>
-
-                    <!-- Employé -->
-                    <td class="px-4 py-3">
-
-                        <div class="d-flex align-items-center gap-3">
-
-                            <div class="rounded-circle bg-primary text-white
+                                <div class="rounded-circle bg-primary text-white
                                         d-flex align-items-center justify-content-center
-                                        fw-semibold flex-shrink-0"
-                                 style="width: 40px; height: 40px;">
+                                        fw-semibold flex-shrink-0" style="width: 40px; height: 40px;">
 
-                                {{ row.first_name[0] }}{{ row.last_name[0] }}
+                                    {{ row.first_name[0] }}{{ row.last_name[0] }}
+
+                                </div>
+
+                                <span class="fw-medium text-dark">
+
+                                    {{ row.first_name }}
+                                    {{ row.last_name }}
+
+                                </span>
 
                             </div>
 
-                            <span class="fw-medium text-dark">
+                        </td>
 
-                                {{ row.first_name }}
-                                {{ row.last_name }}
 
+                        <!-- Date -->
+                        <td class="px-4 py-3 text-secondary">
+
+                            {{ row.att_date }}
+
+                        </td>
+
+
+                        <!-- Jour -->
+                        <td class="px-4 py-3 text-secondary">
+
+                            {{ row.weekday }}
+
+                        </td>
+
+
+                        <!-- Statut -->
+                        <td class="px-4 py-3">
+
+                            {% if get_attendance_status(row.clock_in) == 'Présent' %}
+
+                            <span class="badge text-bg-success">
+                                Présent
                             </span>
 
-                        </div>
+                            {% elif get_attendance_status(row.clock_in) == 'En retard' %}
 
-                    </td>
+                            <span class="badge text-bg-warning">
+                                En retard
+                            </span>
 
+                            {% else %}
 
-                    <!-- Date -->
-                    <td class="px-4 py-3 text-secondary">
+                            <span class="badge text-bg-danger">
+                                Absent
+                            </span>
 
-                        {{ row.att_date }}
+                            {% endif %}
 
-                    </td>
-
-
-                    <!-- Jour -->
-                    <td class="px-4 py-3 text-secondary">
-
-                        {{ row.weekday }}
-
-                    </td>
+                        </td>
 
 
-                    <!-- Statut -->
-                    <td class="px-4 py-3">
+                        <!-- Arrivée -->
+                        <td class="px-4 py-3 font-monospace text-dark">
 
-                        {% if get_attendance_status(row.clock_in) == 'Présent' %}
+                            {{ row.clock_in or "-" }}
 
-                        <span class="badge text-bg-success">
-                            Présent
-                        </span>
-
-                        {% elif get_attendance_status(row.clock_in) == 'En retard' %}
-
-                        <span class="badge text-bg-warning">
-                            En retard
-                        </span>
-
-                        {% else %}
-
-                        <span class="badge text-bg-danger">
-                            Absent
-                        </span>
-
-                        {% endif %}
-
-                    </td>
+                        </td>
 
 
-                    <!-- Arrivée -->
-                    <td class="px-4 py-3 font-monospace text-dark">
+                        <!-- Départ -->
+                        <td class="px-4 py-3 font-monospace text-secondary">
 
-                        {{ row.clock_in or "-" }}
+                            {{ row.clock_out or "-" }}
 
-                    </td>
-
-
-                    <!-- Départ -->
-                    <td class="px-4 py-3 font-monospace text-secondary">
-
-                        {{ row.clock_out or "-" }}
-
-                    </td>
+                        </td>
 
 
-                    <!-- Total -->
-                    <td class="px-4 py-3 fw-semibold">
+                        <!-- Total -->
+                        <td class="px-4 py-3 fw-semibold">
 
-                        {{ row.total_hrs or "-" }}
+                            {{ row.total_hrs or "-" }}
 
-                    </td>
+                        </td>
 
-                </tr>
-
-
-                {% else %}
-
-                <tr>
-
-                    <td colspan="7"
-                        class="text-center py-5 text-secondary">
-
-                        <div class="mb-2">
-
-                            <svg xmlns="http://www.w3.org/2000/svg"
-                                 width="40"
-                                 height="40"
-                                 fill="none"
-                                 viewBox="0 0 24 24"
-                                 stroke="currentColor"
-                                 class="text-secondary">
-
-                                <circle cx="12"
-                                        cy="12"
-                                        r="9" />
-
-                                <path stroke-linecap="round"
-                                      stroke-linejoin="round"
-                                      d="M12 7v5l3 2" />
-
-                            </svg>
-
-                        </div>
-
-                        Aucun historique de pointage trouvé.
-
-                    </td>
-
-                </tr>
-
-                {% endfor %}
-
-            </tbody>
-
-        </table>
-
-    </div>
+                    </tr>
 
 
-    <!-- Pagination -->
-    <div class="d-flex flex-column flex-sm-row
+                    {% else %}
+
+                    <tr>
+
+                        <td colspan="7" class="text-center py-5 text-secondary">
+
+                            <div class="mb-2">
+
+                                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" class="text-secondary">
+
+                                    <circle cx="12" cy="12" r="9" />
+
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2" />
+
+                                </svg>
+
+                            </div>
+
+                            Aucun historique de pointage trouvé.
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- Pagination -->
+        <div class="d-flex flex-column flex-sm-row
                 justify-content-between
                 align-items-sm-center
                 gap-3 p-3 border-top">
 
-        <div class="small text-secondary">
+            <div class="small text-secondary">
 
-            Page {{ page }}
-            -
-            {{ count }} résultats
+                Page {{ page }}
+                -
+                {{ count }} résultats
 
-        </div>
-
-
-        <div class="d-flex gap-2">
-
-            {% if previous %}
-
-            <a href="?page={{ page-1 }}&page_size={{ page_size }}"
-               class="btn btn-outline-secondary btn-sm">
-
-                ← Précédent
-
-            </a>
-
-            {% endif %}
+            </div>
 
 
-            {% if next %}
+            <div class="d-flex gap-2">
 
-            <a href="?page={{ page+1 }}&page_size={{ page_size }}"
-               class="btn btn-primary btn-sm">
+                {% if previous %}
 
-                Suivant →
+                <a href="?page={{ page-1 }}&page_size={{ page_size }}" class="btn btn-outline-secondary btn-sm">
 
-            </a>
+                    ← Précédent
 
-            {% endif %}
+                </a>
+
+                {% endif %}
+
+
+                {% if next %}
+
+                <a href="?page={{ page+1 }}&page_size={{ page_size }}" class="btn btn-primary btn-sm">
+
+                    Suivant →
+
+                </a>
+
+                {% endif %}
+
+            </div>
 
         </div>
 
     </div>
-
-</div>
 
 </div>
 
