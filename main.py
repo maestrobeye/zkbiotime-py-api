@@ -276,7 +276,7 @@ async def dashboard(request: Request):
 # -----------------------------
 # EMPLOYEES
 # -----------------------------
-PAGE_SIZE = 50
+PAGE_SIZE = 150
 @app.get(
     "/employees",
     response_class=HTMLResponse
@@ -351,7 +351,6 @@ def employees_page(
             }
         )
     total_pages = (total + PAGE_SIZE - 1) // PAGE_SIZE
-    
     return templates.TemplateResponse(
             request=request,
             name="employees.html",
