@@ -267,7 +267,17 @@ Pointages
                         <!-- Total -->
                         <td class="px-4 py-3 fw-semibold">
 
-                            {{ row.total_hrs or "-" }}
+                            {% if row.total_hrs %}
+
+                            <span class="badge rounded-pill {{ get_total_hours_badge(row.total_hrs) }}">
+                                {{ row.total_hrs }}
+                            </span>
+
+                            {% else %}
+
+                            <span class="text-secondary">-</span>
+
+                            {% endif %}
 
                         </td>
 

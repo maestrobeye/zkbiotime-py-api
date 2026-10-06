@@ -2529,3 +2529,23 @@ async def edit_area_page(
 
 def format_matricule(numero):
     return f"{int(numero):04d}/ISEP-TH"
+
+def get_total_hours_badge(total_hrs):
+    if not total_hrs:
+        return "bg-secondary-subtle text-secondary"
+
+    try:
+        hours, minutes = map(int, str(total_hrs).split(":"))
+
+        total_minutes = hours * 60 + minutes
+
+        if total_minutes >= 8 * 60:
+            return "bg-success-subtle text-success"
+
+        return "bg-warning-subtle text-warning-emphasis"
+
+    except (ValueError, TypeError):
+        return "bg-secondary-subtle text-secondary"
+
+templates.env.globals["get_total_hours_badge"] = get_total_hours_badge
+
