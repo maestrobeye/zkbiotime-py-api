@@ -238,7 +238,7 @@ async def dashboard(request: Request):
                 "X-API-Key": "1234",
             },
         )
-    print(start_date)
+
     async with httpx.AsyncClient(timeout=30) as client:
         responseTerminals = await client.get(
             "http://localhost/iclock/api/terminals/",

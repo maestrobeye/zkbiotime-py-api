@@ -71,11 +71,74 @@
                         <h2 class="h5 fw-semibold text-dark mb-1">
                             {{ employee.first_name }} {{ employee.last_name }}
                         </h2>
-                    
+
                         <p class="small text-secondary mb-0">
                             {{ employee.position.position_name if employee.position else "-" }}
                         </p>
-                    
+                        <!-- Modes de badgeage -->
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+
+                            <!-- Empreinte -->
+                            {% if employee.fingerprint %}
+                            <span
+                                class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle text-success"
+                                style="width: 26px; height: 26px;" title="Badgeage par empreinte">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path d="M12 11a2 2 0 0 1 2 2" />
+                                    <path d="M8 13a4 4 0 0 1 8 0" />
+                                    <path d="M5 13a7 7 0 0 1 14 0" />
+                                    <path d="M12 3a10 10 0 0 1 10 10" />
+                                    <path d="M2 13a10 10 0 0 1 10-10" />
+                                    <path d="M12 17a5 5 0 0 1-5-5" />
+                                    <path d="M12 17a5 5 0 0 0 5-5" />
+                                </svg>
+                            </span>
+                            {% endif %}
+
+
+                            <!-- Carte RFID -->
+                            {% if employee.card_no %}
+                            <span
+                                class="d-inline-flex align-items-center justify-content-center rounded-circle bg-warning-subtle text-warning-emphasis"
+                                style="width: 26px; height: 26px;"
+                                title="Badgeage par carte RFID : {{ employee.card_no }}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect x="3" y="5" width="18" height="14" rx="2" />
+                                    <path d="M7 9h4" />
+                                    <path d="M7 13h2" />
+                                    <path d="M15 9h2" />
+                                    <path d="M15 13h2" />
+                                </svg>
+                            </span>
+                            {% endif %}
+
+
+                            <!-- Code / Password -->
+                            {% if employee.device_password %}
+                            <span
+                                class="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger-subtle text-danger"
+                                style="width: 26px; height: 26px;" title="Badgeage par code">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <!-- Tête de clé -->
+                                    <circle cx="7" cy="17" r="4" />
+
+                                    <!-- Tige dirigée vers le haut -->
+                                    <path d="M10 14L20 4" />
+
+                                    <!-- Dents de la clé -->
+                                    <path d="M16 8l2 2" />
+                                    <path d="M18 6l2 2" />
+                                </svg>
+                            </span>
+                            {% endif %}
+
+                        </div>
                     </div>
 
                     <!-- Input fichier caché -->
@@ -173,24 +236,14 @@
                     <!-- Action -->
                     <div class="card-body pt-0">
 
-                        <a
-                            href="/employees/edit/{{ employee.id }}"
-                            class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2"
-                        >
+                        <a href="/employees/edit/{{ employee.id }}"
+                            class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2">
 
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                            >
-                                <path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5"/>
-                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5" />
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                             </svg>
 
                             Modifier l'employé
@@ -244,21 +297,12 @@
                                 <!-- Date début -->
                                 <div>
 
-                                    <label
-                                        for="start_date"
-                                        class="form-label small fw-semibold text-secondary mb-1"
-                                    >
+                                    <label for="start_date" class="form-label small fw-semibold text-secondary mb-1">
                                         Du
                                     </label>
 
-                                    <input
-                                        type="date"
-                                        id="start_date"
-                                        name="start_date"
-                                        value="{{ start_date }}"
-                                        form="attendance-filter"
-                                        class="form-control form-control-sm"
-                                    >
+                                    <input type="date" id="start_date" name="start_date" value="{{ start_date }}"
+                                        form="attendance-filter" class="form-control form-control-sm">
 
                                 </div>
 
@@ -266,55 +310,32 @@
                                 <!-- Date fin -->
                                 <div>
 
-                                    <label
-                                        for="end_date"
-                                        class="form-label small fw-semibold text-secondary mb-1"
-                                    >
+                                    <label for="end_date" class="form-label small fw-semibold text-secondary mb-1">
                                         Au
                                     </label>
 
-                                    <input
-                                        type="date"
-                                        id="end_date"
-                                        name="end_date"
-                                        value="{{ end_date }}"
-                                        form="attendance-filter"
-                                        class="form-control form-control-sm"
-                                    >
+                                    <input type="date" id="end_date" name="end_date" value="{{ end_date }}"
+                                        form="attendance-filter" class="form-control form-control-sm">
 
                                 </div>
 
 
                                 <!-- Filtrer -->
-                                <button
-                                    type="submit"
-                                    form="attendance-filter"
-                                    class="btn btn-primary btn-sm"
-                                >
+                                <button type="submit" form="attendance-filter" class="btn btn-primary btn-sm">
                                     Filtrer
                                 </button>
 
 
                                 <!-- Export -->
-                                <a
-                                    href="/attendanceForSingle/export?emp_id={{ employee.id }}"
-                                    class="btn btn-success btn-sm d-inline-flex align-items-center gap-2"
-                                >
+                                <a href="/attendanceForSingle/export?emp_id={{ employee.id }}"
+                                    class="btn btn-success btn-sm d-inline-flex align-items-center gap-2">
 
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="16"
-                                        height="16"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="2"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    >
-                                        <path d="M12 10v6"/>
-                                        <path d="m9 13 3 3 3-3"/>
-                                        <path d="M4 4h16v16H4z"/>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M12 10v6" />
+                                        <path d="m9 13 3 3 3-3" />
+                                        <path d="M4 4h16v16H4z" />
                                     </svg>
 
                                     Export Excel
@@ -329,11 +350,7 @@
 
 
                     <!-- Form invisible -->
-                    <form
-                        id="attendance-filter"
-                        method="get"
-                        action="/employee/{{ employee.id }}"
-                    >
+                    <form id="attendance-filter" method="get" action="/employee/{{ employee.id }}">
                     </form>
 
                 </div>
@@ -453,24 +470,14 @@
 
                                     <div class="d-flex flex-column align-items-center">
 
-                                        <div
-                                            class="rounded-circle bg-light text-secondary d-flex align-items-center justify-content-center mb-3"
-                                            style="width: 42px; height: 42px;"
-                                        >
+                                        <div class="rounded-circle bg-light text-secondary d-flex align-items-center justify-content-center mb-3"
+                                            style="width: 42px; height: 42px;">
 
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="20"
-                                                height="20"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                stroke-width="2"
-                                                stroke-linecap="round"
-                                                stroke-linejoin="round"
-                                            >
-                                                <circle cx="12" cy="12" r="9"/>
-                                                <path d="M12 7v5l3 3"/>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="9" />
+                                                <path d="M12 7v5l3 3" />
                                             </svg>
 
                                         </div>
@@ -524,10 +531,8 @@
 
                                 <li class="page-item">
 
-                                    <a
-                                        class="page-link"
-                                        href="/employee/{{ employee.id }}?page={{ page - 1 }}&start_date={{ start_date }}&end_date={{ end_date }}"
-                                    >
+                                    <a class="page-link"
+                                        href="/employee/{{ employee.id }}?page={{ page - 1 }}&start_date={{ start_date }}&end_date={{ end_date }}">
                                         ← Précédent
                                     </a>
 
@@ -540,10 +545,8 @@
 
                                 <li class="page-item">
 
-                                    <a
-                                        class="page-link"
-                                        href="/employee/{{ employee.id }}?page={{ page + 1 }}&start_date={{ start_date }}&end_date={{ end_date }}"
-                                    >
+                                    <a class="page-link"
+                                        href="/employee/{{ employee.id }}?page={{ page + 1 }}&start_date={{ start_date }}&end_date={{ end_date }}">
                                         Suivant →
                                     </a>
 
@@ -571,49 +574,49 @@
 <script>
 
     document.getElementById("photoInput").addEventListener("change", async function () {
-    
+
         const file = this.files[0];
-    
+
         if (!file) {
             return;
         }
-    
+
         // Vérification du format
         const allowedTypes = [
             "image/jpeg",
             "image/png",
             "image/webp"
         ];
-    
+
         if (!allowedTypes.includes(file.type)) {
-    
+
             alert("Format d'image non supporté.");
-    
+
             this.value = "";
-    
+
             return;
         }
-    
-    
+
+
         // Taille maximale : 5 MB
         if (file.size > 5 * 1024 * 1024) {
-    
+
             alert("La photo ne doit pas dépasser 5 MB.");
-    
+
             this.value = "";
-    
+
             return;
         }
-    
-    
+
+
         // Préparation de l'envoi
         const formData = new FormData();
-    
+
         formData.append("photo", file);
-    
-    
+
+
         try {
-    
+
             const response = await fetch(
                 "/employees/{{ employee.id }}/photo",
                 {
@@ -621,91 +624,91 @@
                     body: formData
                 }
             );
-    
-    
+
+
             const result = await response.json();
-    
-    
+
+
             if (!response.ok) {
-    
+
                 throw new Error(
                     result.detail || "Erreur lors de l'importation de la photo."
                 );
             }
-    
-    
+
+
             console.log("Photo importée :", result);
-    
-    
+
+
             // Forcer le navigateur à recharger la nouvelle photo
             const photoUrl =
                 "http://localhost/" +
                 result.photo +
                 "?t=" +
                 Date.now();
-    
-    
+
+
             const initials =
                 document.getElementById("employeeInitials");
-    
-    
+
+
             let photo =
                 document.getElementById("employeePhoto");
-    
-    
+
+
             // Si aucune balise IMG n'existe actuellement
             if (!photo) {
-    
+
                 photo = document.createElement("img");
-    
+
                 photo.id = "employeePhoto";
-    
+
                 photo.alt =
                     "{{ employee.first_name }} {{ employee.last_name }}";
-    
+
                 photo.className =
                     "rounded-circle border w-100 h-100";
-    
+
                 photo.style.objectFit = "cover";
-    
-    
+
+
                 initials.parentNode.insertBefore(
                     photo,
                     initials
                 );
             }
-    
-    
+
+
             photo.src = photoUrl;
-    
+
             photo.style.display = "block";
-    
-    
+
+
             if (initials) {
                 initials.style.display = "none";
             }
-    
-    
+
+
             alert("Photo mise à jour avec succès.");
-    
-    
+
+
         } catch (error) {
-    
+
             console.error(error);
-    
+
             alert(
                 error.message ||
                 "Une erreur est survenue lors de l'importation."
             );
-    
+
         }
-    
-    
+
+
         // Permet de sélectionner à nouveau le même fichier
         this.value = "";
-    
+
     });
-    
-    </script>
-    
+
+</script>
+
 {% endblock %}
