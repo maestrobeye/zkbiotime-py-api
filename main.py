@@ -281,91 +281,183 @@ PAGE_SIZE = 150
     "/employees",
     response_class=HTMLResponse
 )
-def employees_page(
+async def employees_page(
     request: Request,
     page: int = 1
-): 
+):
 
     if not check_login(request):
         return RedirectResponse("/login")
 
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM personnel_employee")
-    total = cur.fetchone()[0]
 
-    offset = (page - 1) * PAGE_SIZE
+    token = request.session.get("zk_token")
 
-    cur.execute(
-    """
-    SELECT
-        e.id,
-        e.emp_code,
-        e.first_name,
-        e.last_name,
-        e.email,
-        e.photo,
-        pp.position_name,
-        ARRAY_AGG(DISTINCT pa.area_name)
-            FILTER (WHERE pa.area_name IS NOT NULL) AS areas
-    FROM personnel_employee e
-    LEFT JOIN personnel_position pp
-        ON pp.id = e.position_id
-    LEFT JOIN personnel_employee_area pea
-        ON e.id = pea.employee_id
-    LEFT JOIN personnel_area pa
-        ON pa.id = pea.area_id
-    GROUP BY
-        e.id,
-        e.emp_code,
-        e.first_name,
-        e.last_name,
-        e.email,
-        e.photo,
-        pp.position_name
-    ORDER BY e.last_name
-    LIMIT %s OFFSET %s
-    """,
-    (PAGE_SIZE, offset)
-)
+    if not token:
+        return RedirectResponse("/login")
 
-    rows = cur.fetchall()
 
-    cur.close()
-    conn.close()
+    try:
 
-    employees = []
+        async with httpx.AsyncClient(timeout=30) as client:
 
-    for r in rows:
+            response = await client.get(
+                "http://localhost/personnel/api/employees/",
+                params={
+                    "page": page,
+                    "page_size": PAGE_SIZE,
+                },
+                headers={
+                    "Authorization": f"Token {token}",
+                    "X-API-Key": "1234",
+                },
+            )
 
-        employees.append(
-            {
-            "id": r[0],
-            "code": r[1],
-            "first_name": r[2],
-            "last_name": r[3],
-            "email": r[4],
-            "photo": r[5],
-            "position": r[6],
-            "areas": r[7] or []        
-            }
+        response.raise_for_status()
+
+        result = response.json()
+
+
+    except httpx.HTTPStatusError as exc:
+
+        print(
+            f"Erreur API employés : "
+            f"{exc.response.status_code} - "
+            f"{exc.response.text}"
         )
-    total_pages = (total + PAGE_SIZE - 1) // PAGE_SIZE
-    return templates.TemplateResponse(
+
+        return templates.TemplateResponse(
             request=request,
             name="employees.html",
             context={
-                "employees": employees,
+                "employees": [],
                 "page": page,
                 "page_size": PAGE_SIZE,
-                "total": total,
-                "total_pages": total_pages,
-                "has_previous": page > 1,
-                "has_next": page < total_pages,
-                "page_title": "Agents"
+                "total": 0,
+                "total_pages": 0,
+                "has_previous": False,
+                "has_next": False,
+                "page_title": "Agents",
+                "error": "Impossible de récupérer les employés."
             }
         )
 
+
+    except httpx.RequestError as exc:
+
+        print(f"Erreur connexion API : {exc}")
+
+        return templates.TemplateResponse(
+            request=request,
+            name="employees.html",
+            context={
+                "employees": [],
+                "page": page,
+                "page_size": PAGE_SIZE,
+                "total": 0,
+                "total_pages": 0,
+                "has_previous": False,
+                "has_next": False,
+                "page_title": "Agents",
+                "error": "Le serveur des employés est indisponible."
+            }
+        )
+
+
+    # =========================================================
+    # DONNÉES API
+    # =========================================================
+
+    total = result.get("count", 0)
+
+    rows = result.get("data", [])
+
+
+    # =========================================================
+    # TRANSFORMATION POUR LE TEMPLATE
+    # =========================================================
+
+    employees = []
+
+    for emp in rows:
+
+        position = emp.get("position") or {}
+
+        areas = emp.get("area") or []
+
+
+        employees.append(
+            {
+                "id": emp.get("id"),
+
+                "code": emp.get("emp_code"),
+
+                "first_name": emp.get("first_name"),
+
+                "last_name": emp.get("last_name"),
+
+                "email": emp.get("email"),
+
+                "photo": emp.get("photo"),
+
+                "position": position.get("position_name"),
+
+                "areas": [
+                    area.get("area_name")
+                    for area in areas
+                    if area.get("area_name")
+                ],
+
+
+                # =================================================
+                # MOYENS DE BADGEAGE
+                # =================================================
+
+                "fingerprint": bool(
+                    emp.get("fingerprint")
+                    and emp.get("fingerprint") != "-"
+                ),
+
+                "card_no": emp.get("card_no"),
+
+                "device_password": bool(
+                    emp.get("device_password")
+                ),
+            }
+        )
+
+
+    # =========================================================
+    # PAGINATION
+    # =========================================================
+
+    total_pages = (
+        (total + PAGE_SIZE - 1) // PAGE_SIZE
+        if total
+        else 0
+    )
+
+
+    return templates.TemplateResponse(
+        request=request,
+        name="employees.html",
+        context={
+            "employees": employees,
+
+            "page": page,
+
+            "page_size": PAGE_SIZE,
+
+            "total": total,
+
+            "total_pages": total_pages,
+
+            "has_previous": page > 1,
+
+            "has_next": page < total_pages,
+
+            "page_title": "Agents"
+        }
+    )
 # Chemin physique des photos
 PHOTO_DIRECTORY = r"C:\ZKBioTime\auth_files\photo"
 
