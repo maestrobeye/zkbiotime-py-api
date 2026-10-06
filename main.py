@@ -228,7 +228,7 @@ async def dashboard(request: Request):
     
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.get(
-            "http://localhost/iclock/api/transactions/?page_size=20",
+            "http://localhost/iclock/api/transactions/?page_size=20&ordering=-punch_time",
             params={
                 "start_time": start_date.isoformat(),
                 "end_time": end_date.isoformat(),
@@ -238,7 +238,7 @@ async def dashboard(request: Request):
                 "X-API-Key": "1234",
             },
         )
-    
+    print(start_date)
     async with httpx.AsyncClient(timeout=30) as client:
         responseTerminals = await client.get(
             "http://localhost/iclock/api/terminals/",
@@ -1020,7 +1020,7 @@ async def get_form(request: Request):
    
     return templates.TemplateResponse(
         request=request,
-        name="employeeForm.html",
+        name="employee_form.html",
         context={
             "areas": areas
         }
@@ -1036,6 +1036,7 @@ async def edit_employee_page(
         "Content-Type": "application/json",
         "X-API-Key": "1234",
     }
+    
     error = request.session.pop("error", None)
     success = request.session.pop("success", None)
     
