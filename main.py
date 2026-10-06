@@ -229,10 +229,10 @@ async def dashboard(request: Request):
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.get(
             "http://localhost/iclock/api/transactions/?page_size=20&ordering=-punch_time",
-            params={
-                "start_time": start_date.isoformat(),
-                "end_time": end_date.isoformat(),
-            },
+            # params={
+            #     "start_time": start_date.isoformat(),
+            #     "end_time": end_date.isoformat(),
+            # },
             headers={
                 "Authorization": f"Token {request.session['zk_token']}",
                 "X-API-Key": "1234",
