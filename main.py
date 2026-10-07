@@ -1628,6 +1628,7 @@ async def employee_profile(
                 "page_size": page_size,
                 "departments": -1,
                 "groups": -1,
+                "ZK_APP_URL": ZK_APP_URL,
             },
             headers=headers,
         )
