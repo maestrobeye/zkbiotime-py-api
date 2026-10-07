@@ -24,3 +24,5 @@ client-app/*.ntvs*
 client-app/*.njsproj
 client-app/*.sln
 client-app/*.sw?
+
+.env

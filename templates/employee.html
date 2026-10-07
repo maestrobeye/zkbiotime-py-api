@@ -23,10 +23,10 @@
 
                         {% if employee.photo %}
 
-                        <img id="employeePhoto" src="http://localhost/{{ employee.photo }}"
-                            alt="{{ employee.first_name }} {{ employee.last_name }}"
-                            class="rounded-circle border w-100 h-100" style="object-fit: cover;"
-                            onerror="this.style.display='none'; document.getElementById('employeeInitials').style.display='flex';">
+                        <img src="{{ ZK_APP_URL }}{{ employee.photo }}"
+                            alt="{{ employee.first_name }} {{ employee.last_name }}" class="rounded-circle border"
+                            style="width: 40px; height: 40px; object-fit: cover;"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
 
                         <div id="employeeInitials"
                             class="rounded-circle bg-primary text-white fw-bold fs-3 align-items-center justify-content-center w-100 h-100"
@@ -38,7 +38,7 @@
 
                         <div id="employeeInitials"
                             class="rounded-circle bg-primary text-white fw-bold fs-3 d-flex align-items-center justify-content-center w-100 h-100">
-                            {{ employee.first_name[0] }}{{ employee.last_name[0] }}
+                            {{ employee.first_name[0] }}{{ employee.last_name[0] }} {{ ZK_APP_URL }}
                         </div>
 
                         {% endif %}
@@ -402,7 +402,7 @@
                                 <!-- Date -->
                                 <td class="px-4 py-3 small text-nowrap">
 
-                                    {{ row.att_date }}
+                                    {{ row.weekday }} - {{ row.att_date }}
 
                                 </td>
 

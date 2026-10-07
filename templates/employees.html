@@ -150,11 +150,10 @@
 
                                 {% if emp.photo %}
 
-                                <img src="http://localhost/auth_files/{{ emp.photo }}"
+                                <img src="{{ ZK_APP_URL }}{{ emp.photo }}"
                                     alt="{{ emp.first_name }} {{ emp.last_name }}" class="rounded-circle border"
                                     style="width: 40px; height: 40px; object-fit: cover;"
                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-
                                 <div class="rounded-circle bg-primary text-white fw-semibold align-items-center justify-content-center"
                                     style="width: 40px; height: 40px; display:none;">
                                     {{ emp.first_name[0] }}{{ emp.last_name[0] }}

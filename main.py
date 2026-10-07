@@ -8,6 +8,7 @@ from fastapi.responses import (
 )
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import Response
 
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -42,6 +43,7 @@ import tempfile
 import io
 
 BIOTIME = r"C:\ZKBioTime"
+ZK_APP_URL = os.getenv("ZK_APP_URL")
 
 sys.path.insert(0, BIOTIME)
 
@@ -82,22 +84,6 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(
     directory="templates"
 )
-
-
-# class EmployeeCreate(BaseModel):
-#     emp_code: str
-#     department: int
-#     area: list[int]
-
-#     hire_date: Optional[str] = None
-#     first_name: Optional[str] = None
-#     last_name: Optional[str] = None
-#     gender: Optional[str] = None
-#     mobile: Optional[str] = None
-#     national: Optional[str] = None
-#     address: Optional[str] = None
-#     email: Optional[EmailStr] = None
-#     app_status: Optional[int] = None
 
 
 def check_login(request: Request):
@@ -296,6 +282,8 @@ async def employees_page(
 
     if not token:
         return RedirectResponse("/login")
+    print("AUTH_APP_URL =", ZK_APP_URL)
+
 
 
     try:
@@ -339,6 +327,7 @@ async def employees_page(
                 "has_previous": False,
                 "has_next": False,
                 "page_title": "Agents",
+                "ZK_APP_URL": ZK_APP_URL,
                 "error": "Impossible de récupérer les employés."
             }
         )
@@ -360,10 +349,9 @@ async def employees_page(
                 "has_previous": False,
                 "has_next": False,
                 "page_title": "Agents",
-                "error": "Le serveur des employés est indisponible."
+                "error": "Le serveur des employés est indisponible.",
             }
         )
-
 
     # =========================================================
     # DONNÉES API
@@ -456,11 +444,13 @@ async def employees_page(
             "has_previous": page > 1,
 
             "has_next": page < total_pages,
-
+            "ZK_APP_URL": ZK_APP_URL,
             "page_title": "Agents"
         }
     )
+    
 PAGE_SIZE_EXPORT=1000
+
 async def get_all_employees(token: str):
     """
     Récupère tous les employés depuis l'API personnel,
@@ -688,8 +678,6 @@ PHOTO_DIRECTORY = r"C:\ZKBioTime\auth_files\photo"
 MAX_PHOTO_SIZE = 30 * 1024  # 30 Ko
 MAX_WIDTH = 320
 MAX_HEIGHT = 320
-
-
 def compress_photo(contents: bytes) -> bytes:
 
     image = Image.open(BytesIO(contents))
@@ -950,7 +938,33 @@ async def upload_employee_photo(
         if con:
             con.close()
         
-@app.get("/employees/{employee_id}/photo/view")
+
+@app.get("/view_employee_photo/{file_path:path}", name="view_employee_photo")
+async def view_employee_photo(file_path: str):
+    try:
+        photo_path = "/" + file_path
+
+        response = requests.get(
+            f"{AUTH_APP_URL}{photo_path}",
+            timeout=5
+        )
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=404,
+                detail="Photo introuvable"
+            )
+
+        return Response(
+            content=response.content,
+            media_type=response.headers.get("Content-Type", "image/jpeg")
+        )
+
+    except requests.RequestException:
+        raise HTTPException(
+            status_code=404,
+            detail="Impossible de récupérer la photo"
+        )
 def view_employee_photo(employee_id: int):
 
     conn = None
