@@ -445,10 +445,10 @@ async def employees_page(
 
             "has_next": page < total_pages,
             "ZK_APP_URL": ZK_APP_URL,
-            "page_title": "Agents"
+            "page_title": f"{total} Agents"
         }
     )
-    
+
 PAGE_SIZE_EXPORT=1000
 
 async def get_all_employees(token: str):
@@ -1627,8 +1627,7 @@ async def employee_profile(
                 "page": page,
                 "page_size": page_size,
                 "departments": -1,
-                "groups": -1,
-                "ZK_APP_URL": ZK_APP_URL,
+                "groups": -1
             },
             headers=headers,
         )
@@ -1686,6 +1685,7 @@ async def employee_profile(
             # Filtres
             "start_date": start_date,
             "end_date": end_date,
+            "ZK_APP_URL": ZK_APP_URL,
         }
     )
 # -----------------------------
