@@ -32,12 +32,14 @@ import asyncio
 import httpx
 
 from openpyxl.styles import PatternFill
-
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
 from PIL import Image, ImageOps
 
 import os
 import sys
 import tempfile
+import io
 
 BIOTIME = r"C:\ZKBioTime"
 
@@ -458,6 +460,222 @@ async def employees_page(
             "page_title": "Agents"
         }
     )
+PAGE_SIZE_EXPORT=1000
+async def get_all_employees(token: str):
+    """
+    Récupère tous les employés depuis l'API personnel,
+    en suivant la pagination.
+    """
+
+    employees = []
+
+    page = 1
+
+    async with httpx.AsyncClient(timeout=60) as client:
+
+        while True:
+
+            response = await client.get(
+                "http://localhost/personnel/api/employees/",
+                params={
+                    "page": page,
+                    "page_size": PAGE_SIZE_EXPORT,
+                },
+                headers={
+                    "Authorization": f"Token {token}",
+                    "X-API-Key": "1234",
+                },
+            )
+
+            response.raise_for_status()
+
+            result = response.json()
+
+            rows = result.get("data", [])
+
+            employees.extend(rows)
+
+            # S'il n'y a plus de page
+            if not result.get("next"):
+                break
+
+            page += 1
+
+    return employees
+def prepare_employee_rows(rows):
+
+    employees = []
+
+    for emp in rows:
+
+        position = emp.get("position") or {}
+        areas = emp.get("area") or []
+
+        employees.append({
+            "id": emp.get("id"),
+            "code": emp.get("emp_code") or "",
+            "first_name": emp.get("first_name") or "",
+            "last_name": emp.get("last_name") or "",
+            "email": emp.get("email") or "",
+
+            "position": position.get("position_name") or "",
+
+            "areas": ", ".join(
+                area.get("area_name")
+                for area in areas
+                if area.get("area_name")
+            ),
+
+            "fingerprint": (
+                "Oui"
+                if emp.get("fingerprint")
+                and emp.get("fingerprint") != "-"
+                else "Non"
+            ),
+
+            "card_no": emp.get("card_no") or "",
+
+            "device_password": (
+                "Oui"
+                if emp.get("device_password")
+                else "Non"
+            ),
+        })
+
+    return employees
+    
+@app.get("/employees/export/excel")
+async def export_employees_excel(request: Request):
+
+    if not check_login(request):
+        return RedirectResponse("/login")
+
+    token = request.session.get("zk_token")
+
+    if not token:
+        return RedirectResponse("/login")
+
+    try:
+
+        rows = await get_all_employees(token)
+
+        employees = prepare_employee_rows(rows)
+
+    except Exception as exc:
+
+        print(f"Erreur export Excel : {exc}")
+
+        return RedirectResponse("/employees")
+
+    # =========================================================
+    # CREATION DU FICHIER EXCEL
+    # =========================================================
+
+    workbook = Workbook()
+
+    worksheet = workbook.active
+    worksheet.title = "Agents"
+
+    headers = [
+        "Code",
+        "Prénom",
+        "Nom",
+        "Email",
+        "Poste",
+        "Zones",
+        "Empreinte",
+        "N° Badge",
+        "Mot de passe",
+    ]
+
+    worksheet.append(headers)
+
+    # Style des headers
+    header_fill = PatternFill(
+        fill_type="solid",
+        fgColor="1F4E78"
+    )
+
+    header_font = Font(
+        color="FFFFFF",
+        bold=True
+    )
+
+    for cell in worksheet[1]:
+
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(
+            horizontal="center",
+            vertical="center"
+        )
+
+    # =========================================================
+    # DONNEES
+    # =========================================================
+
+    for employee in employees:
+
+        worksheet.append([
+            employee["code"],
+            employee["first_name"],
+            employee["last_name"],
+            employee["email"],
+            employee["position"],
+            employee["areas"],
+            employee["fingerprint"],
+            employee["card_no"],
+            employee["device_password"],
+        ])
+
+    # =========================================================
+    # LARGEUR DES COLONNES
+    # =========================================================
+
+    widths = {
+        "A": 15,
+        "B": 25,
+        "C": 25,
+        "D": 35,
+        "E": 25,
+        "F": 45,
+        "G": 15,
+        "H": 20,
+        "I": 20,
+    }
+
+    for column, width in widths.items():
+        worksheet.column_dimensions[column].width = width
+
+    # Figer la première ligne
+    worksheet.freeze_panes = "A2"
+
+    # Filtre automatique
+    worksheet.auto_filter.ref = worksheet.dimensions
+
+    # =========================================================
+    # GENERATION DU FICHIER
+    # =========================================================
+
+    output = io.BytesIO()
+
+    workbook.save(output)
+
+    output.seek(0)
+
+    return StreamingResponse(
+        output,
+        media_type=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        ),
+        headers={
+            "Content-Disposition": (
+                'attachment; filename="liste_agents.xlsx"'
+            )
+        }
+    )
+
 # Chemin physique des photos
 PHOTO_DIRECTORY = r"C:\ZKBioTime\auth_files\photo"
 
