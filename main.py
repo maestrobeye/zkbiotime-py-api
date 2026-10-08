@@ -282,9 +282,6 @@ async def employees_page(
 
     if not token:
         return RedirectResponse("/login")
-    print("AUTH_APP_URL =", ZK_APP_URL)
-
-
 
     try:
 
@@ -798,9 +795,6 @@ async def upload_employee_photo(
             )
 
         emp_code = employee[0]
-
-        print("employee_id =", employee_id)
-        print("emp_code =", emp_code)
 
         # ====================================================
         # 2. Préparer le dossier
@@ -2066,8 +2060,6 @@ async def attendance_export(
         f"{end_date.isoformat()}.xlsx"
     )
 
-    print(records)
-
     return StreamingResponse(
         output,
         media_type=(
@@ -2086,7 +2078,6 @@ async def attendance_export(
     start_date: date | None = Query(None),
     end_date: date | None = Query(None),
 ):
-    print(start_date)
     # Dates par défaut : année en cours
     today = date.today()
 
@@ -2215,8 +2206,6 @@ async def attendance_export(
         f"attendance_{start_date.isoformat()}_"
         f"{end_date.isoformat()}.xlsx"
     )
-
-    print(records)
 
     return StreamingResponse(
         output,

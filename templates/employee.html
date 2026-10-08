@@ -79,7 +79,7 @@
                         <div class="d-flex align-items-center justify-content-center gap-2">
 
                             <!-- Empreinte -->
-                            {% if employee.fingerprint %}
+                            {% if employee.fingerprint and employee.fingerprint != "-" %}
                             <span
                                 class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle text-success"
                                 style="width: 26px; height: 26px;" title="Badgeage par empreinte">
