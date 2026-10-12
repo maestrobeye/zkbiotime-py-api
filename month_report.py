@@ -32,6 +32,7 @@ MOIS_FR = [
     "Septembre", "Octobre", "Novembre", "Décembre"
 ]
 
+
 BLEU = "1A73E8"
 BLANC = "FFFFFF"
 ROUGE = "F4CCCC"
@@ -273,50 +274,3 @@ def creer_rapport(pointages):
     fichier.seek(0)
 
     return fichier, len(employes), sorted(mois_trouves), erreurs
-
-
-@app.get("/")
-def accueil():
-    return {
-        "application": "Gestion du pointage",
-        "version": "1.0.0",
-        "documentation": "/docs",
-        "endpoint_rapport": "POST /api/rapport"
-    }
-
-
-@app.post("/api/rapport")
-def generer_rapport(requete: RapportRequest):
-    if not requete.pointages:
-        raise HTTPException(
-            status_code=422,
-            detail="La liste pointages est vide."
-        )
-
-    if len(requete.pointages) > 100_000:
-        raise HTTPException(
-            status_code=413,
-            detail="Maximum de 100 000 lignes par requête."
-        )
-
-    fichier, nb_employes, periodes, erreurs = creer_rapport(
-        requete.pointages
-    )
-
-    nom = "Rapport_Pointage.xlsx"
-
-    reponse = StreamingResponse(
-        fichier,
-        media_type=(
-            "application/vnd.openxmlformats-officedocument."
-            "spreadsheetml.sheet"
-        ),
-        headers={
-            "Content-Disposition": f'attachment; filename="{nom}"',
-            "X-Nombre-Employes": str(nb_employes),
-            "X-Nombre-Mois": str(len(periodes)),
-            "X-Nombre-Avertissements": str(len(erreurs)),
-        }
-    )
-
-    return reponse

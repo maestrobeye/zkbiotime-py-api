@@ -2237,7 +2237,6 @@ async def month_report_page(
     start_date = date(year, month, 1)
     last_day = calendar.monthrange(year, month)[1]
     end_date = date(year, month, last_day)
-    print(start_date)
     employee_ids = get_employee_ids()
 
     async with httpx.AsyncClient(timeout=60) as client:
@@ -2274,9 +2273,16 @@ async def month_report_page(
             status_code=404,
             detail="Aucun pointage trouvé pour ce mois",
         )
-    print("Nombre de résultats :", len(records))
-    print("Premier enregistrement :", records[0] if records else "Aucune donnée")
+    # print("Nombre de résultats :", len(records))
+    # print("Premier enregistrement :", records[0] if records else "Aucune donnée")
     fichier, nb_employes, periodes, erreurs = creer_rapport(records)
+    
+    MOIS_FR = [
+    "Janvier", "Février", "Mars", "Avril",
+    "Mai", "Juin", "Juillet", "Août",
+    "Septembre", "Octobre", "Novembre", "Décembre"
+]
+    nom_fichier = f"Pointage_{year}_{MOIS_FR[month - 1]}"
 
     return StreamingResponse(
         fichier,
@@ -2286,7 +2292,7 @@ async def month_report_page(
         ),
         headers={
             "Content-Disposition": (
-                f'attachment; filename="Pointage_{year}_{month:02d}.xlsx"'
+                f'attachment; filename="Pointage_{year}_{nom_fichier}.xlsx"'
             ),
         },
     )
