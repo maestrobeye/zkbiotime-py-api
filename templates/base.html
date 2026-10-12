@@ -688,8 +688,18 @@
 
                     // Fermer la modale après le téléchargement
                     const modalElement = document.getElementById("rapportModal");
-                    bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+                    const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
 
+                    modalInstance.hide();
+
+                    // Nettoyer le backdrop si Bootstrap ne le retire pas correctement
+                    modalElement.addEventListener("hidden.bs.modal", function () {
+                        document.querySelectorAll(".modal-backdrop").forEach(el => el.remove());
+
+                        document.body.classList.remove("modal-open");
+                        document.body.style.removeProperty("overflow");
+                        document.body.style.removeProperty("padding-right");
+                    }, { once: true });
                 } catch (err) {
                     erreur.textContent = err.message ||
                         "Une erreur est survenue lors de la génération.";
