@@ -376,7 +376,7 @@
                     {% block header %}
 
                     {{ page_title | default("Tableau de bord") }}
-                    
+
                     {% endblock %}
 
                 </h2>
@@ -453,20 +453,25 @@
         if (periode && startDate && endDate) {
 
             function formatDate(date) {
-
                 const year = date.getFullYear();
-
-                const month = String(
-                    date.getMonth() + 1
-                ).padStart(2, '0');
-
-                const day = String(
-                    date.getDate()
-                ).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
 
                 return `${year}-${month}-${day}`;
             }
 
+            function setDatesEditable(editable) {
+                startDate.readOnly = !editable;
+                endDate.readOnly = !editable;
+
+                // Indication visuelle
+                startDate.classList.toggle('bg-light', !editable);
+                endDate.classList.toggle('bg-light', !editable);
+
+                // Désactive également l'interaction avec les champs verrouillés.
+                startDate.style.pointerEvents = editable ? 'auto' : 'none';
+                endDate.style.pointerEvents = editable ? 'auto' : 'none';
+            }
 
             periode.addEventListener('change', function () {
 
@@ -475,105 +480,65 @@
                 let start;
                 let end;
 
+                // Période personnalisée : autoriser la saisie manuelle.
+                if (this.value === 'Personnalisée') {
+                    setDatesEditable(true);
+                    startDate.focus();
+                    return;
+                }
+
+                // Aucune période choisie : vider et déverrouiller.
+                if (this.value === '') {
+                    setDatesEditable(true);
+                    startDate.value = '';
+                    endDate.value = '';
+                    return;
+                }
+
+                // Toutes les autres périodes sont automatiques.
+                setDatesEditable(false);
 
                 switch (this.value) {
 
-                    // ==========================================
-                    // AUJOURD'HUI
-                    // ==========================================
-
                     case "Aujourd'hui":
-
                         start = new Date(today);
                         end = new Date(today);
-
                         break;
-
-
-                    // ==========================================
-                    // HIER
-                    // ==========================================
 
                     case "Hier":
-
                         start = new Date(today);
-
-                        start.setDate(
-                            today.getDate() - 1
-                        );
-
+                        start.setDate(today.getDate() - 1);
                         end = new Date(start);
-
                         break;
 
-
-                    // ==========================================
-                    // CETTE SEMAINE
-                    // Lundi -> Dimanche
-                    // ==========================================
-
-                    case "Cette semaine":
-
+                    case "Cette semaine": {
                         start = new Date(today);
 
                         const day = today.getDay();
+                        const diff = day === 0 ? 6 : day - 1;
 
-                        const diff =
-                            day === 0 ? 6 : day - 1;
-
-                        start.setDate(
-                            today.getDate() - diff
-                        );
+                        start.setDate(today.getDate() - diff);
 
                         end = new Date(start);
-
-                        end.setDate(
-                            start.getDate() + 6
-                        );
-
+                        end.setDate(start.getDate() + 6);
                         break;
+                    }
 
-
-                    // ==========================================
-                    // SEMAINE DERNIÈRE
-                    // Lundi -> Dimanche
-                    // ==========================================
-
-                    case "Semaine dernière":
-
+                    case "Semaine dernière": {
                         start = new Date(today);
 
-                        const currentDay = today.getDay();
+                        const day = today.getDay();
+                        const diff = day === 0 ? 6 : day - 1;
 
-                        const currentDiff =
-                            currentDay === 0 ? 6 : currentDay - 1;
+                        // Lundi de cette semaine, puis lundi précédent.
+                        start.setDate(today.getDate() - diff - 7);
 
-                        // Lundi de cette semaine
-                        start.setDate(
-                            today.getDate() - currentDiff
-                        );
-
-                        // Lundi de la semaine dernière
-                        start.setDate(
-                            start.getDate() - 7
-                        );
-
-                        // Dimanche de la semaine dernière
                         end = new Date(start);
-
-                        end.setDate(
-                            start.getDate() + 6
-                        );
-
+                        end.setDate(start.getDate() + 6);
                         break;
-
-
-                    // ==========================================
-                    // CE MOIS
-                    // ==========================================
+                    }
 
                     case "Ce mois":
-
                         start = new Date(
                             today.getFullYear(),
                             today.getMonth(),
@@ -585,16 +550,9 @@
                             today.getMonth() + 1,
                             0
                         );
-
                         break;
 
-
-                    // ==========================================
-                    // TROIS DERNIERS MOIS
-                    // ==========================================
-
                     case "Trois derniers mois":
-
                         start = new Date(
                             today.getFullYear(),
                             today.getMonth() - 2,
@@ -602,16 +560,9 @@
                         );
 
                         end = new Date(today);
-
                         break;
 
-
-                    // ==========================================
-                    // SIX DERNIERS MOIS
-                    // ==========================================
-
                     case "Six derniers mois":
-
                         start = new Date(
                             today.getFullYear(),
                             today.getMonth() - 5,
@@ -619,16 +570,9 @@
                         );
 
                         end = new Date(today);
-
                         break;
 
-
-                    // ==========================================
-                    // CETTE ANNÉE
-                    // ==========================================
-
                     case "Cette année":
-
                         start = new Date(
                             today.getFullYear(),
                             0,
@@ -640,32 +584,127 @@
                             11,
                             31
                         );
-
                         break;
 
-
-                    // ==========================================
-                    // PAR DÉFAUT
-                    // ==========================================
-
                     default:
-
+                        setDatesEditable(true);
                         return;
                 }
 
-
-                startDate.value =
-                    formatDate(start);
-
-                endDate.value =
-                    formatDate(end);
-
+                startDate.value = formatDate(start);
+                endDate.value = formatDate(end);
             });
 
+            // État initial : champs modifiables tant qu'aucune période
+            // prédéfinie n'a été sélectionnée.
+            setDatesEditable(true);
         }
 
     </script>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById("rapportForm");
+            const selectMois = document.getElementById("mois");
+            const selectAnnee = document.getElementById("annee");
+            const btnGenerer = document.getElementById("btnGenerer");
+            const erreur = document.getElementById("rapportErreur");
+
+            const maintenant = new Date();
+            const anneeActuelle = maintenant.getFullYear();
+            const moisActuel = maintenant.getMonth() + 1;
+
+            // Sélectionner le mois courant
+            selectMois.value = String(moisActuel);
+
+            // Remplir les années disponibles
+            for (let annee = anneeActuelle; annee >= anneeActuelle - 5; annee--) {
+                const option = document.createElement("option");
+                option.value = annee;
+                option.textContent = annee;
+                selectAnnee.appendChild(option);
+            }
+
+            selectAnnee.value = String(anneeActuelle);
+
+            form.addEventListener("submit", async function (event) {
+                event.preventDefault();
+
+                erreur.classList.add("d-none");
+                erreur.textContent = "";
+
+                const mois = selectMois.value;
+                const annee = selectAnnee.value;
+
+                btnGenerer.disabled = true;
+                btnGenerer.innerHTML = `
+            <span class="spinner-border spinner-border-sm"
+                  role="status" aria-hidden="true"></span>
+            Génération en cours...
+        `;
+
+                try {
+                    const url = `/month-report?year=${encodeURIComponent(annee)}&month=${encodeURIComponent(mois)}`;
+
+                    const response = await fetch(url, {
+                        method: "GET",
+                        credentials: "same-origin"
+                    });
+
+                    if (!response.ok) {
+                        let message = "Impossible de générer le rapport.";
+
+                        try {
+                            const data = await response.json();
+                            message = data.detail || message;
+                        } catch (_) {
+                            // La réponse n'est pas du JSON.
+                        }
+
+                        throw new Error(message);
+                    }
+
+                    const blob = await response.blob();
+
+                    // Récupérer le nom de fichier fourni par le serveur
+                    const disposition = response.headers.get("Content-Disposition");
+                    const match = disposition &&
+                        disposition.match(/filename="?([^";]+)"?/i);
+
+                    const nomFichier = match
+                        ? match[1]
+                        : `Pointage_${annee}_${String(mois).padStart(2, "0")}.xlsx`;
+
+                    const lien = document.createElement("a");
+                    const urlBlob = URL.createObjectURL(blob);
+
+                    lien.href = urlBlob;
+                    lien.download = nomFichier;
+                    document.body.appendChild(lien);
+                    lien.click();
+                    lien.remove();
+
+                    URL.revokeObjectURL(urlBlob);
+
+                    // Fermer la modale après le téléchargement
+                    const modalElement = document.getElementById("rapportModal");
+                    bootstrap.Modal.getOrCreateInstance(modalElement).hide();
+
+                } catch (err) {
+                    erreur.textContent = err.message ||
+                        "Une erreur est survenue lors de la génération.";
+                    erreur.classList.remove("d-none");
+
+                } finally {
+                    btnGenerer.disabled = false;
+                    btnGenerer.innerHTML = `
+                <i class="bi bi-download"></i>
+                Télécharger Excel
+            `;
+                }
+            });
+        });
+    </script>
 
     <!-- ==========================================
          EXPORT EXCEL

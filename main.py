@@ -17,7 +17,7 @@ from db import get_conn
 import pandas as pd
 import os
 from datetime import date
-from pydantic import BaseModel,EmailStr
+from pydantic import BaseModel,Field
 from fastapi import Query
 import httpx
 import requests
@@ -41,6 +41,8 @@ import os
 import sys
 import tempfile
 import io
+from month_report import creer_rapport
+import calendar
 
 BIOTIME = r"C:\ZKBioTime"
 ZK_APP_URL = os.getenv("ZK_APP_URL")
@@ -2215,6 +2217,77 @@ async def attendance_export(
         ),
         headers={
             "Content-Disposition": f'attachment; filename="{filename}"'
+        },
+    )
+
+class RapportRequest(BaseModel):
+    pointages: list[dict] = Field(
+        ...,
+        description="Liste des pointages des employés"
+    )
+@app.get("/month-report")
+async def month_report_page(
+    request: Request,
+    year: int = Query(default_factory=lambda: date.today().year),
+    month: int = Query(default_factory=lambda: date.today().month, ge=1, le=12),
+):
+    if "zk_token" not in request.session:
+        raise HTTPException(status_code=401, detail="Session expirée")
+
+    start_date = date(year, month, 1)
+    last_day = calendar.monthrange(year, month)[1]
+    end_date = date(year, month, last_day)
+    print(start_date)
+    employee_ids = get_employee_ids()
+
+    async with httpx.AsyncClient(timeout=60) as client:
+        response = await client.get(
+            ATT_API_URL,
+            params={
+                "employees": employee_ids,
+                "query": 32,
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "page": 1,
+                "page_size": 100000,
+                "departments": -1,
+                "areas": -1,
+                "groups": -1,
+            },
+            headers={
+                "Authorization": f"Token {request.session['zk_token']}",
+                "X-API-Key": "1234",
+            },
+        )
+
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail="Erreur lors de la récupération des pointages",
+        )
+
+    data = response.json()
+    records = data.get("data", [])
+
+    if not records:
+        raise HTTPException(
+            status_code=404,
+            detail="Aucun pointage trouvé pour ce mois",
+        )
+    print("Nombre de résultats :", len(records))
+    print("Premier enregistrement :", records[0] if records else "Aucune donnée")
+    fichier, nb_employes, periodes, erreurs = creer_rapport(records)
+
+    return StreamingResponse(
+        fichier,
+        media_type=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        ),
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="Pointage_{year}_{month:02d}.xlsx"'
+            ),
         },
     )
 
