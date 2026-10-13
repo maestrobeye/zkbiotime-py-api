@@ -2273,8 +2273,7 @@ async def month_report_page(
             status_code=404,
             detail="Aucun pointage trouvé pour ce mois",
         )
-    # print("Nombre de résultats :", len(records))
-    # print("Premier enregistrement :", records[0] if records else "Aucune donnée")
+    
     fichier, nb_employes, periodes, erreurs = creer_rapport(records)
     
     MOIS_FR = [
