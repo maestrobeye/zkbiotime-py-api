@@ -3116,10 +3116,12 @@ def toggle_user(user_id: int, request: Request):
     finally:
         conn.close()
 
+
 @app.post("/users/{user_id}/delete")
 def delete_user(user_id: int, request: Request):
     if not check_login(request):
-        return RedirectResponse("/login")
+        return RedirectResponse("/login", status_code=303)
+
     # Protéger le compte administrateur principal
     if user_id == 1:
         raise HTTPException(
@@ -3128,15 +3130,51 @@ def delete_user(user_id: int, request: Request):
         )
 
     conn = get_conn()
+
     try:
         cursor = conn.cursor()
 
-        # Suppression logique : conserver les associations en base
+        # Vérifier l'existence du compte
         cursor.execute("""
-            UPDATE auth_user
-            SET is_active = FALSE,
-                del_flag = 1,
-                session_key = NULL
+            SELECT id
+            FROM auth_user
+            WHERE id = %s
+              AND COALESCE(del_flag, 0) = 0
+        """, (user_id,))
+
+        if cursor.fetchone() is None:
+            cursor.execute("""
+                SELECT id
+                FROM auth_user
+                WHERE id = %s
+            """, (user_id,))
+
+            if cursor.fetchone() is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Compte introuvable."
+                )
+
+            raise HTTPException(
+                status_code=400,
+                detail="Ce compte est déjà marqué comme supprimé."
+            )
+
+        # 1. Supprimer les jetons d'authentification
+        cursor.execute("""
+            DELETE FROM authtoken_token
+            WHERE user_id = %s
+        """, (user_id,))
+
+        # 2. Supprimer les journaux de requêtes API associés
+        cursor.execute("""
+            DELETE FROM rest_framework_tracking_apirequestlog
+            WHERE user_id = %s
+        """, (user_id,))
+
+        # 3. Supprimer définitivement l'utilisateur
+        cursor.execute("""
+            DELETE FROM auth_user
             WHERE id = %s
               AND COALESCE(del_flag, 0) = 0
             RETURNING id
@@ -3145,21 +3183,12 @@ def delete_user(user_id: int, request: Request):
         deleted_user = cursor.fetchone()
 
         if deleted_user is None:
-            cursor.execute(
-                "SELECT id FROM auth_user WHERE id = %s",
-                (user_id,),
-            )
-            if cursor.fetchone() is None:
-                raise HTTPException(
-                    status_code=404,
-                    detail="Compte introuvable"
-                )
-
             raise HTTPException(
                 status_code=400,
-                detail="Ce compte est déjà désactivé ou supprimé."
+                detail="La suppression de l'utilisateur a échoué."
             )
 
+        # Valider toutes les suppressions
         conn.commit()
 
         return RedirectResponse(
@@ -3170,14 +3199,16 @@ def delete_user(user_id: int, request: Request):
     except HTTPException:
         conn.rollback()
         raise
+
     except Exception as exc:
         conn.rollback()
         raise HTTPException(
             status_code=500,
             detail=f"Erreur SQL : {exc}"
         ) from exc
+
     finally:
-        conn.close()
+        conn.close()      
 @app.post("/users/{user_id}/reset-password")
 async def reset_password(user_id: int, request: Request):
     user = check_login(request)
