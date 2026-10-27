@@ -43,6 +43,17 @@ import tempfile
 import io
 from month_report import creer_rapport
 import calendar
+from django.conf import settings
+from django.contrib.auth.hashers import (
+    PBKDF2PasswordHasher,
+    check_password,
+)
+hasher = PBKDF2PasswordHasher()
+hasher.iterations = 390000
+
+def hash_password(password: str) -> str:
+    return hasher.encode(password, hasher.salt())
+
 
 BIOTIME = r"C:\ZKBioTime"
 ZK_APP_URL = os.getenv("ZK_APP_URL")
@@ -56,6 +67,15 @@ os.environ.setdefault(
 
 import django
 django.setup()
+if not settings.configured:
+    settings.configure(
+        PASSWORD_HASHERS=[
+            "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+        ]
+    )
+
+hasher = PBKDF2PasswordHasher()
+hasher.iterations = 390000
 
 from django.conf import settings
 from mysite.tools.image_utils import encrypt_image
@@ -2320,7 +2340,16 @@ def format_time(dt):
 
 @app.get("/pointeurs")
 async def get_terminals(request: Request):
+    if not check_login(request):
+        return RedirectResponse("/login", status_code=303)
 
+    if request.session.get("user") != "admin":
+        return templates.TemplateResponse(
+            request=request,
+            name="403.html",
+            context={},
+            status_code=403
+        )
     token = request.session["zk_token"]
 
     headers = {
@@ -2356,6 +2385,16 @@ async def edit_terminal_form(
     terminal_id: int,
     request: Request,
 ):
+    if not check_login(request):
+        return RedirectResponse("/login", status_code=303)
+
+    if request.session.get("user") != "admin":
+        return templates.TemplateResponse(
+            request=request,
+            name="403.html",
+            context={},
+            status_code=403
+        )
     token = request.session.get("zk_token")
 
     if not token:
@@ -2407,6 +2446,16 @@ async def update_terminal(
     terminal_id: int,
     request: Request,
 ):
+    if not check_login(request):
+        return RedirectResponse("/login", status_code=303)
+
+    if request.session.get("user") != "admin":
+        return templates.TemplateResponse(
+            request=request,
+            name="403.html",
+            context={},
+            status_code=403
+        )
     token = request.session.get("zk_token")
 
     if not token:
@@ -2624,6 +2673,16 @@ async def upload_all_terminals(request: Request):
 async def areas_page(
     request: Request
 ):
+    if not check_login(request):
+        return RedirectResponse("/login", status_code=303)
+
+    if request.session.get("user") != "admin":
+        return templates.TemplateResponse(
+            request=request,
+            name="403.html",
+            context={},
+            status_code=403
+        )
     token = request.session["zk_token"]
 
     headers = {
@@ -2669,7 +2728,16 @@ async def areas_page(
     )
 @app.get("/areas/create")
 async def create_area_page(request: Request):
+    if not check_login(request):
+        return RedirectResponse("/login", status_code=303)
 
+    if request.session.get("user") != "admin":
+        return templates.TemplateResponse(
+            request=request,
+            name="403.html",
+            context={},
+            status_code=403
+        )
     token = request.session["zk_token"]
 
     headers = {
@@ -2715,6 +2783,16 @@ async def create_area(
     area_name: Annotated[str, Form()],
     parent_area: Annotated[int | None, Form()] = None,
 ):
+    if not check_login(request):
+        return RedirectResponse("/login", status_code=303)
+
+    if request.session.get("user") != "admin":
+        return templates.TemplateResponse(
+            request=request,
+            name="403.html",
+            context={},
+            status_code=403
+        )
     token = request.session["zk_token"]
 
     headers = {
@@ -2753,6 +2831,16 @@ async def edit_area_page(
     request: Request,
     area_id: int,
 ):
+    if not check_login(request):
+        return RedirectResponse("/login", status_code=303)
+
+    if request.session.get("user") != "admin":
+        return templates.TemplateResponse(
+            request=request,
+            name="403.html",
+            context={},
+            status_code=403
+        )
     token = request.session["zk_token"]
 
     headers = {
@@ -2849,3 +2937,363 @@ def get_total_hours_badge(total_hrs):
 
 templates.env.globals["get_total_hours_badge"] = get_total_hours_badge
 
+@app.get("/users")
+def users_page(request: Request):
+    if not check_login(request):
+        return RedirectResponse("/login", status_code=303)
+
+    if request.session.get("user") != "admin":
+        return templates.TemplateResponse(
+            request=request,
+            name="403.html",
+            context={},
+            status_code=403
+        )
+
+    conn = get_conn()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, username, email, is_superuser, is_active, password
+            FROM auth_user
+            WHERE COALESCE(del_flag, 0) = 0
+            ORDER BY id DESC
+        """)
+        columns = [column[0] for column in cursor.description]
+        users = [
+            dict(zip(columns, row))
+            for row in cursor.fetchall()
+        ]
+        # print(users)
+        hashed = "pbkdf2_sha256$390000$YaGsK75K55oPXBxP6ZWLCf$LIcR3qtGOJGhaWK8HTd88ZNzvnhAaismeMCiJv7soz4="
+
+        print(check_password("passer123", hashed))
+        return templates.TemplateResponse(
+            request=request,
+            name="users.html",
+            context={"users": users},
+        )
+    finally:
+        conn.close()
+
+@app.post("/users/create")
+def create_user(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    email: str = Form(...),
+    is_superuser: bool = Form(False),
+    is_active: bool = Form(False),
+):
+    user = check_login(request)
+
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    if not user["is_superuser"] or user["username"] != "admin":
+        return templates.TemplateResponse(
+            request=request,
+            name="403.html",
+            context={},
+            status_code=403
+        )
+    conn = get_conn()
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT id FROM auth_user WHERE username = %s",
+            (username,),
+        )
+        if cursor.fetchone():
+            raise HTTPException(
+                status_code=409,
+                detail="Ce nom d'utilisateur existe déjà.",
+            )
+
+        cursor.execute("""
+    INSERT INTO auth_user (
+        username,
+        password,
+        email,
+        first_name,
+        last_name,
+        is_staff,
+        is_active,
+        is_superuser,
+        is_public,
+        can_manage_all_dept,
+        date_joined
+    )
+    VALUES (
+        %s, %s, %s, %s, %s,
+        %s, %s, %s, %s, %s, NOW()
+    )
+""", (
+    username,
+    hash_password(password),
+    email,
+    "",
+    "",
+    True,               # is_staff
+    bool(is_active),     # is_active
+    bool(is_superuser),  # is_superuser
+    False,               # is_public
+    False,               # can_manage_all_dept
+))
+
+        conn.commit()
+        return RedirectResponse("/users", status_code=303)
+
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as exc:
+        conn.rollback()
+        print(f"Erreur SQL lors de la création du compte : {exc}")
+        raise HTTPException(
+            status_code=500,
+            detail="Erreur SQL lors de la création du compte.",
+        ) from exc
+    finally:
+        conn.close()
+
+@app.post("/users/{user_id}/toggle")
+def toggle_user(user_id: int, request: Request):
+    if not check_login(request):
+        return RedirectResponse("/login")
+    # Protéger le compte administrateur principal
+    if user_id == 1:
+        raise HTTPException(
+            status_code=403,
+            detail="Le compte administrateur principal ne peut pas être désactivé."
+        )
+
+    conn = get_conn()
+    try:
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            UPDATE auth_user
+            SET is_active = NOT is_active,
+                session_key = NULL
+            WHERE id = %s
+              AND COALESCE(del_flag, 0) = 0
+            RETURNING id, is_active
+        """, (user_id,))
+
+        updated_user = cursor.fetchone()
+
+        if updated_user is None:
+            cursor.execute(
+                "SELECT id FROM auth_user WHERE id = %s",
+                (user_id,),
+            )
+            if cursor.fetchone() is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Compte introuvable"
+                )
+
+            raise HTTPException(
+                status_code=400,
+                detail="Impossible de modifier le statut de ce compte."
+            )
+
+        conn.commit()
+
+        return RedirectResponse(
+            url="/users",
+            status_code=303
+        )
+
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+@app.post("/users/{user_id}/delete")
+def delete_user(user_id: int, request: Request):
+    if not check_login(request):
+        return RedirectResponse("/login")
+    # Protéger le compte administrateur principal
+    if user_id == 1:
+        raise HTTPException(
+            status_code=403,
+            detail="Le compte administrateur principal ne peut pas être supprimé."
+        )
+
+    conn = get_conn()
+    try:
+        cursor = conn.cursor()
+
+        # Suppression logique : conserver les associations en base
+        cursor.execute("""
+            UPDATE auth_user
+            SET is_active = FALSE,
+                del_flag = 1,
+                session_key = NULL
+            WHERE id = %s
+              AND COALESCE(del_flag, 0) = 0
+            RETURNING id
+        """, (user_id,))
+
+        deleted_user = cursor.fetchone()
+
+        if deleted_user is None:
+            cursor.execute(
+                "SELECT id FROM auth_user WHERE id = %s",
+                (user_id,),
+            )
+            if cursor.fetchone() is None:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Compte introuvable"
+                )
+
+            raise HTTPException(
+                status_code=400,
+                detail="Ce compte est déjà désactivé ou supprimé."
+            )
+
+        conn.commit()
+
+        return RedirectResponse(
+            url="/users",
+            status_code=303
+        )
+
+    except HTTPException:
+        conn.rollback()
+        raise
+    except Exception as exc:
+        conn.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Erreur SQL : {exc}"
+        ) from exc
+    finally:
+        conn.close()
+@app.post("/users/{user_id}/reset-password")
+async def reset_password(user_id: int, request: Request):
+    user = check_login(request)
+
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    if not user["is_superuser"] or user["username"] != "admin":
+        return templates.TemplateResponse(
+            request=request,
+            name="403.html",
+            context={},
+            status_code=403
+        )
+    # Protéger le compte administrateur principal
+    if user_id == 1:
+        raise HTTPException(
+            status_code=403,
+            detail="Le mot de passe du compte administrateur principal "
+                   "ne peut pas être réinitialisé par cette route."
+        )
+
+    form = await request.form()
+
+    new_password = form.get("new_password", "")
+    confirm_password = form.get("confirm_password", "")
+
+    # Vérification des champs
+    if not isinstance(new_password, str) or not isinstance(confirm_password, str):
+        return RedirectResponse(
+            url="/users?error=" + quote("Données invalides"),
+            status_code=303,
+        )
+
+    if len(new_password) < 8:
+        return RedirectResponse(
+            url="/users?error=" + quote("Le mot de passe doit contenir au moins 8 caractères"),
+            status_code=303,
+        )
+
+    if new_password != confirm_password:
+        return RedirectResponse(
+            url="/users?error=" + quote("Les mots de passe ne correspondent pas"),
+            status_code=303,
+        )
+
+    conn = get_conn()
+
+    try:
+        cursor = conn.cursor()
+
+        # Vérifier que le compte existe et n'est pas supprimé
+        cursor.execute("""
+            SELECT id
+            FROM auth_user
+            WHERE id = %s
+              AND COALESCE(del_flag, 0) = 0
+        """, (user_id,))
+
+        user = cursor.fetchone()
+
+        if user is None:
+            cursor.execute(
+                "SELECT id FROM auth_user WHERE id = %s",
+                (user_id,),
+            )
+
+            if cursor.fetchone() is None:
+                conn.rollback()
+                return RedirectResponse(
+                    url="/users?error=" + quote("Compte introuvable"),
+                    status_code=303,
+                )
+
+            conn.rollback()
+            return RedirectResponse(
+                url="/users?error=" + quote("Ce compte est supprimé"),
+                status_code=303,
+            )
+
+        # Générer un hachage compatible avec Django
+        hashed_password = hash_password(new_password)
+
+        # Mettre à jour uniquement le mot de passe
+        cursor.execute("""
+            UPDATE auth_user
+            SET password = %s,
+                session_key = NULL
+            WHERE id = %s
+              AND COALESCE(del_flag, 0) = 0
+            RETURNING id
+        """, (hashed_password, user_id))
+
+        updated_user = cursor.fetchone()
+
+        if updated_user is None:
+            conn.rollback()
+            return RedirectResponse(
+                url="/users?error=" + "Échec de la réinitialisation",
+                status_code=303,
+            )
+
+        conn.commit()
+
+        return RedirectResponse(
+            url="/users?success=" + "Mot de passe réinitialisé avec succès",
+            status_code=303,
+        )
+
+    except Exception as e:
+        conn.rollback()
+        # Ne pas exposer les détails SQL au navigateur
+        raise HTTPException(
+            status_code=500,
+            detail="Erreur lors de la réinitialisation du mot de passe : " + str(e),
+        )
+
+    finally:
+        conn.close()

@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Accès non autorisé{% endblock %}
+
+{% block content %}
+
+<div class="min-vh-70 d-flex align-items-center justify-content-center px-3">
+    <div class="w-100" style="max-width: 32rem;">
+
+        <div class="bg-white rounded-4 shadow-sm border border-light overflow-hidden">
+
+            <!-- Header / Icon -->
+            <div class="px-4 pt-5 pb-4 text-center">
+
+                <div class="mx-auto rounded-circle bg-danger-subtle text-danger
+                            d-flex align-items-center justify-content-center"
+                     style="width: 5rem; height: 5rem;">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke-width="1.8"
+                         stroke="currentColor"
+                         style="width: 2.5rem; height: 2.5rem;">
+
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="M12 9v4m0 4h.01
+                                 M10.3 3.6 2.9 18a2 2 0 0 0 1.8 3h14.6
+                                 a2 2 0 0 0 1.8-3L13.7 3.6
+                                 a2 2 0 0 0-3.4 0Z" />
+                    </svg>
+
+                </div>
+
+                <!-- Code erreur -->
+                <p class="mt-4 display-1 fw-bold text-dark mb-0">
+                    403
+                </p>
+
+                <h1 class="mt-3 fs-2 fw-bold text-dark">
+                    Accès non autorisé
+                </h1>
+
+                <p class="mt-3 text-secondary lh-base mb-0">
+                    Vous n'avez pas les permissions nécessaires pour
+                    accéder à cette page.
+                </p>
+
+            </div>
+
+            <!-- Information -->
+            <div class="mx-4 mb-4 px-3 py-3 rounded-3
+                        bg-warning-subtle border border-warning-subtle">
+
+                <div class="d-flex align-items-start gap-3">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke-width="1.8"
+                         stroke="currentColor"
+                         class="text-warning flex-shrink-0 mt-1"
+                         style="width: 1.25rem; height: 1.25rem;">
+
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="M12 9v4m0 4h.01
+                                 M10.3 3.6 2.9 18a2 2 0 0 0 1.8 3h14.6
+                                 a2 2 0 0 0 1.8-3L13.7 3.6
+                                 a2 2 0 0 0-3.4 0Z" />
+                    </svg>
+
+                    <p class="small text-dark mb-0">
+                        Si vous pensez que cet accès devrait vous être
+                        accordé, veuillez contacter votre administrateur.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <!-- Footer -->
+            <div class="px-4 py-3 bg-light border-top
+                        d-flex flex-column flex-sm-row
+                        align-items-center justify-content-center gap-3">
+
+                <a href="/"
+                   class="btn btn-primary w-100 w-sm-auto d-inline-flex
+                          align-items-center justify-content-center gap-2">
+
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         fill="none"
+                         viewBox="0 0 24 24"
+                         stroke-width="2"
+                         stroke="currentColor"
+                         style="width: 1rem; height: 1rem;">
+
+                        <path stroke-linecap="round"
+                              stroke-linejoin="round"
+                              d="M3 12l9-9 9 9
+                                 M5 10v10h14V10
+                                 M9 20v-6h6v6" />
+                    </svg>
+
+                    Retour à l'accueil
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
