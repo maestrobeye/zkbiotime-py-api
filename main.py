@@ -3134,7 +3134,7 @@ def delete_user(user_id: int, request: Request):
     try:
         cursor = conn.cursor()
 
-        # Vérifier l'existence du compte
+        # 1. Vérifier que l'utilisateur existe et n'est pas déjà supprimé
         cursor.execute("""
             SELECT id
             FROM auth_user
@@ -3143,11 +3143,10 @@ def delete_user(user_id: int, request: Request):
         """, (user_id,))
 
         if cursor.fetchone() is None:
-            cursor.execute("""
-                SELECT id
-                FROM auth_user
-                WHERE id = %s
-            """, (user_id,))
+            cursor.execute(
+                "SELECT id FROM auth_user WHERE id = %s",
+                (user_id,)
+            )
 
             if cursor.fetchone() is None:
                 raise HTTPException(
@@ -3160,19 +3159,36 @@ def delete_user(user_id: int, request: Request):
                 detail="Ce compte est déjà marqué comme supprimé."
             )
 
-        # 1. Supprimer les jetons d'authentification
-        cursor.execute("""
-            DELETE FROM authtoken_token
-            WHERE user_id = %s
-        """, (user_id,))
+        # 2. Supprimer les dépendances directes de auth_user.
+        # Toutes ces opérations restent dans la même transaction.
 
-        # 2. Supprimer les journaux de requêtes API associés
-        cursor.execute("""
-            DELETE FROM rest_framework_tracking_apirequestlog
-            WHERE user_id = %s
-        """, (user_id,))
+        dependent_deletes = [
+            ("authtoken_token", "user_id"),
+            ("rest_framework_tracking_apirequestlog", "user_id"),
+            ("accounts_usernotification", "user_id"),
+            ("auth_user_profile", "user_id"),
+            ("accounts_adminbiodata", "admin_id"),
+            ("att_reporttemplate", "builder_id"),
+            ("auth_user_auth_area", "myuser_id"),
+            ("auth_user_auth_dept", "myuser_id"),
+            ("auth_user_groups", "myuser_id"),
+            ("auth_user_user_permissions", "myuser_id"),
+            ("base_adminlog", "user_id"),
+            ("base_bookmark", "user_id"),
+            ("base_messengersentlog", "user_id"),
+            ("django_admin_log", "user_id"),
+            ("mobile_announcement", "admin_id"),
+            ("mobile_appnotification", "admin_id"),
+        ]
 
-        # 3. Supprimer définitivement l'utilisateur
+        for table_name, column_name in dependent_deletes:
+            query = (
+                f'DELETE FROM "{table_name}" '
+                f'WHERE "{column_name}" = %s'
+            )
+            cursor.execute(query, (user_id,))
+
+        # 3. Supprimer définitivement le compte
         cursor.execute("""
             DELETE FROM auth_user
             WHERE id = %s
@@ -3188,7 +3204,7 @@ def delete_user(user_id: int, request: Request):
                 detail="La suppression de l'utilisateur a échoué."
             )
 
-        # Valider toutes les suppressions
+        # 4. Valider toutes les opérations
         conn.commit()
 
         return RedirectResponse(
@@ -3208,7 +3224,9 @@ def delete_user(user_id: int, request: Request):
         ) from exc
 
     finally:
-        conn.close()      
+        conn.close()
+
+
 @app.post("/users/{user_id}/reset-password")
 async def reset_password(user_id: int, request: Request):
     user = check_login(request)
