@@ -3229,12 +3229,10 @@ def delete_user(user_id: int, request: Request):
 
 @app.post("/users/{user_id}/reset-password")
 async def reset_password(user_id: int, request: Request):
-    user = check_login(request)
-
-    if not user:
-        return RedirectResponse("/login", status_code=303)
-
-    if not user["is_superuser"] or user["username"] != "admin":
+    if not check_login(request):
+            return RedirectResponse("/login", status_code=303)
+    
+    if request.session.get("user") != "admin":
         return templates.TemplateResponse(
             request=request,
             name="403.html",
